@@ -18,6 +18,7 @@ PKGS=(
   "$PKG_PREFIX-python"
   "$PKG_PREFIX-python-gobject"
   "$PKG_PREFIX-python-pillow"
+  "$PKG_PREFIX-python-numpy"
   "$PKG_PREFIX-gtk4"
   "$PKG_PREFIX-libadwaita"
   "$PKG_PREFIX-adwaita-icon-theme"
@@ -38,7 +39,8 @@ rm -rf "$OUT"
 mkdir -p "$OUT"
 LIST="$(mktemp)"
 pacman -Ql "${ALL[@]}" | awk '{print $2}' | grep "^$PREFIX/" | grep -v '/$' | sed "s|^$PREFIX/||" > "$LIST"
-rsync -a --files-from="$LIST" "$PREFIX/" "$OUT/"
+# --ignore-missing-args: some packages list files that are not on disk (e.g. openal hrtf/Default)
+rsync -a --ignore-missing-args --files-from="$LIST" "$PREFIX/" "$OUT/"
 rm -f "$LIST"
 
 echo "==> Pruning files that are not needed at runtime"
