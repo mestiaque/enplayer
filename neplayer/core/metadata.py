@@ -5,6 +5,7 @@ import os
 import shutil
 import subprocess
 from pathlib import Path
+from neplayer.core.paths import norm_path
 
 log = logging.getLogger(__name__)
 
@@ -45,7 +46,7 @@ def probe(path, timeout=30):
         raise MetadataError('ffprobe is not installed')
     st = os.stat(path)
     meta = {
-        'file_path': str(path),
+        'file_path': norm_path(path),
         'title': nice_title(path),
         'file_size': st.st_size,
         'file_mtime': st.st_mtime,
@@ -174,5 +175,5 @@ def _audio_meta(meta, fmt, streams, audio):
 def fallback_meta(path, error):
     """Minimal record for files ffprobe can't read, so they still show up."""
     st = os.stat(path)
-    return {'file_path': str(path), 'title': nice_title(path), 'file_size': st.st_size,
+    return {'file_path': norm_path(path), 'title': nice_title(path), 'file_size': st.st_size,
             'file_mtime': st.st_mtime, 'error': str(error)[:300]}

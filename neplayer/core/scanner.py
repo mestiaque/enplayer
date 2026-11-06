@@ -6,6 +6,7 @@ from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 
 from neplayer.core import metadata
+from neplayer.core.paths import norm_path
 
 log = logging.getLogger(__name__)
 
@@ -89,7 +90,7 @@ def iter_video_files(root, extensions, recursive=True, ignore_hidden=True, cance
                 if ext in extensions and e.is_file(follow_symlinks=True):
                     if ext in _TS_EXTS and not _is_mpeg_ts(e.path):
                         continue
-                    yield e.path, e.stat(follow_symlinks=True)
+                    yield norm_path(e.path), e.stat(follow_symlinks=True)
             except OSError:
                 continue
 

@@ -6,6 +6,7 @@ import threading
 import time
 from contextlib import contextmanager
 from pathlib import Path
+from neplayer.core.paths import norm_path
 
 log = logging.getLogger(__name__)
 
@@ -325,6 +326,7 @@ class Database:
     def upsert_video(self, folder_id, meta):
         now = time.time()
         with self.write() as c:
+            meta = dict(meta, file_path=norm_path(meta['file_path']))
             existing = c.execute('SELECT id FROM videos WHERE file_path=?',
                                  (meta['file_path'],)).fetchone()
             vals = (folder_id, meta['title'], meta['file_size'], meta.get('duration', 0),
@@ -381,7 +383,7 @@ class Database:
 
     def get_video_by_path(self, path):
         r = self.conn.execute(f'SELECT {VIDEO_COLUMNS} {VIDEO_FROM} WHERE v.file_path=?',
-                              (str(path),)).fetchone()
+                              (norm_path(path),)).fetchone()
         return dict(r) if r else None
 
     def videos_without_thumbnail(self, limit=100000):
