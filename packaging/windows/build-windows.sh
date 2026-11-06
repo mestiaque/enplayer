@@ -94,6 +94,8 @@ assert features.check('webp'), 'Pillow without WebP'
 step('Pillow with WebP')
 import mpv
 step('python-mpv import')
+import locale
+locale.setlocale(locale.LC_NUMERIC, 'C')  # libmpv requires it (ENPlayer does the same at start-up)
 step('libmpv ' + str(mpv.MPV(vo='null', terminal='no').mpv_version))
 import neplayer.main, neplayer.ui.main_window
 step('ENPlayer modules')
