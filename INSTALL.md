@@ -6,7 +6,7 @@ Kono technical gyan lagbe na. Nicher dhap gulo follow korun.
 
 ## 🪟 Windows (10 / 11)
 
-1. **`ENPlayer-Setup-1.4.0.exe`** file ta download korun.
+1. **`ENPlayer-Setup-1.4.1.exe`** file ta download korun.
 2. File ta te **double-click** korun.
 3. "Windows protected your PC" lekha nil screen ashle **More info** e click kore **Run anyway** chapun.
    (App ta notun, tai Windows chene na. Eta swabhabik.)
@@ -19,14 +19,14 @@ Kono technical gyan lagbe na. Nicher dhap gulo follow korun.
 
 ## 🐧 Ubuntu (22.04 / 24.04)
 
-1. **`enplayer_1.4.0_all.deb`** file ta download korun.
+1. **`enplayer_1.4.1_all.deb`** file ta download korun.
 2. File ta te **right-click** kore **Open with App Center** (ba **Software Install**) select korun.
 3. **Install** chapun, apnar password din.
 4. App list e **ENPlayer** search kore khulun.
 
 > Double-click e kaj na korle Terminal khule (Ctrl+Alt+T) eta likhun:
 > ```
-> sudo apt install ~/Downloads/enplayer_1.4.0_all.deb
+> sudo apt install ~/Downloads/enplayer_1.4.1_all.deb
 > ```
 
 **Uninstall:** Terminal e likhun `sudo apt remove enplayer`
@@ -66,7 +66,7 @@ nije nije Windows `.exe` installer ar Ubuntu `.deb` banabe (Actions tab → late
 shobaike dite parben.
 
 **Nijer machine e:**
-- Ubuntu `.deb`: `bash packaging/build-deb.sh` → `dist/enplayer_1.4.0_all.deb`
+- Ubuntu `.deb`: `bash packaging/build-deb.sh` → `dist/enplayer_1.4.1_all.deb`
 - Windows `.exe`: Windows PC te [MSYS2](https://www.msys2.org) install korun, **UCRT64** shell khule
   `bash packaging/windows/build-windows.sh` chalan. Tarpor [Inno Setup](https://jrsoftware.org/isinfo.php)
-  die `packaging/windows/enplayer.iss` compile korun → `dist/ENPlayer-Setup-1.4.0.exe`
+  die `packaging/windows/enplayer.iss` compile korun → `dist/ENPlayer-Setup-1.4.1.exe`
