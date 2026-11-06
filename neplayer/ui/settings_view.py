@@ -9,7 +9,7 @@ gi.require_version('Gtk', '4.0')
 gi.require_version('Adw', '1')
 from gi.repository import Adw, Gtk
 
-from neplayer.config import ACCENTS, APP_ID, APP_NAME, COPYRIGHT_YEAR, DATA_DIR, DEFAULT_EXTENSIONS, DEVELOPER, DEVELOPER_EMAIL, LOG_PATH, VERSION
+from neplayer.config import ACCENTS, APP_ID, APP_NAME, COPYRIGHT_YEAR, DATA_DIR, DEFAULT_EXTENSIONS, DEVELOPER, DEVELOPER_EMAIL, DEVELOPER_WEBSITE, LOG_PATH, VERSION
 from neplayer.core import cache
 from neplayer.models.video import format_size
 
@@ -231,6 +231,9 @@ class SettingsView(Gtk.Box):
         mail = Gtk.LinkButton(uri=f'mailto:{DEVELOPER_EMAIL}', label=DEVELOPER_EMAIL)
         mail.add_css_class('set-link')
         self._row(p, 'Contact', 'Bug reports, ideas and feedback are welcome', mail)
+        web = Gtk.LinkButton(uri=DEVELOPER_WEBSITE, label=DEVELOPER_WEBSITE.split('//', 1)[-1])
+        web.add_css_class('set-link')
+        self._row(p, 'Website', None, web)
         self._row(p, 'Also by the developer', 'The matching image viewer', self._value('ENViewer'))
         self._row(p, 'Copyright', None, self._value(f'© {COPYRIGHT_YEAR} {DEVELOPER} · GPL-3.0'))
 

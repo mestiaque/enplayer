@@ -12,7 +12,7 @@ gi.require_version('Adw', '1')
 gi.require_version('Gdk', '4.0')
 from gi.repository import Adw, Gdk, Gio, GLib, Gtk
 
-from neplayer.config import APP_ID, APP_NAME, COPYRIGHT_YEAR, DEVELOPER, DEVELOPER_EMAIL, VERSION
+from neplayer.config import APP_ID, APP_NAME, COPYRIGHT_YEAR, DEVELOPER, DEVELOPER_EMAIL, DEVELOPER_WEBSITE, VERSION
 from neplayer.core.library import probe_single
 from neplayer.models.video import format_duration, format_size
 from neplayer.player import shortcuts
@@ -641,6 +641,7 @@ class MainWindow(Adw.ApplicationWindow):
                                          'Powered by GTK, libadwaita, mpv and FFmpeg.',
                                 developers=[f'{DEVELOPER} <{DEVELOPER_EMAIL}>'],
                                 copyright=f'© {COPYRIGHT_YEAR} {DEVELOPER}',
+                                website=DEVELOPER_WEBSITE, website_label='mestiaque.com',
                                 license_type=Gtk.License.GPL_3_0)
         about.present()
 

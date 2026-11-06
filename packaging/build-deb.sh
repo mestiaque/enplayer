@@ -50,7 +50,8 @@ Recommends: va-driver-all
 Conflicts: frameflow, neplayer
 Replaces: frameflow, neplayer
 Provides: frameflow, neplayer
-Maintainer: Estiaque <natoreit20@gmail.com>
+Maintainer: M. Estiaque Ahmed Khan <info@mestiaque.com>
+Homepage: https://mestiaque.com
 Description: Video and music player with live hover previews
  ENPlayer scans your folders, builds a thumbnail library and plays real
  hover previews straight from the original files. The built-in mpv player

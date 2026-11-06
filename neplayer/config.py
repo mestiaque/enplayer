@@ -7,10 +7,11 @@ IS_WINDOWS = sys.platform == 'win32'
 
 APP_ID = 'io.github.enplayer.ENPlayer'
 APP_NAME = 'ENPlayer'
-DEVELOPER = 'Estiaque'
-DEVELOPER_EMAIL = 'natoreit20@gmail.com'
+DEVELOPER = 'M. Estiaque Ahmed Khan'
+DEVELOPER_EMAIL = 'info@mestiaque.com'
+DEVELOPER_WEBSITE = 'https://mestiaque.com'
 COPYRIGHT_YEAR = '2026'
-VERSION = '1.4.2'
+VERSION = '1.4.3'
 
 if IS_WINDOWS:
     _local = Path(os.environ.get('LOCALAPPDATA', Path.home() / 'AppData' / 'Local'))
