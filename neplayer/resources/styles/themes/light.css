@@ -1,0 +1,23 @@
+/* Floating white control panels over a light letterbox. */
+.player-top {
+  margin: 12px 14px 0; padding: 8px 12px; border-radius: 16px;
+  background-color: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  box-shadow: 0 10px 30px rgba(20, 20, 40, 0.16);
+}
+.player-controls {
+  margin: 0 14px 14px; padding: 12px 18px 10px; border-radius: 18px;
+  background-color: rgba(255, 255, 255, 0.94);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  box-shadow: 0 12px 36px rgba(20, 20, 40, 0.2);
+}
+.thumb-frame { box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 6px 18px rgba(20, 20, 40, 0.08); }
+.ff-sidebar { border-right-color: rgba(0, 0, 0, 0.06); }
+.up-next, .player-error { border: 1px solid rgba(0, 0, 0, 0.08); box-shadow: 0 12px 36px rgba(20, 20, 40, 0.18); }
+.center-flash { background-color: rgba(255, 255, 255, 0.85); }
+scale.seek-bar slider, scale.volume-bar slider { background: #ffffff; border: 1px solid rgba(0, 0, 0, 0.15); }
+.now-playing { background-color: #ececf1; }
+.np-scrim { background-color: rgba(244, 244, 246, 0.55); }
+.np-title { color: #18181b; }
+.np-artist { color: rgba(24, 24, 27, 0.8); }
+.np-album { color: rgba(24, 24, 27, 0.55); }

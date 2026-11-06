@@ -1,0 +1,12 @@
+[Icon Theme]
+Name=NEPLAYER
+Comment=Lucide icons (ISC licence, https://lucide.dev) converted to GTK symbolic icons, so NEPLAYER matches Lumen.
+Inherits=Adwaita,hicolor
+Directories=scalable/actions
+
+[scalable/actions]
+Size=16
+MinSize=8
+MaxSize=512
+Type=Scalable
+Context=Actions

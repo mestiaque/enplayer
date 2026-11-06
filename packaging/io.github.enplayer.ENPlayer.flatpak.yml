@@ -1,0 +1,56 @@
+# Flatpak manifest (build with: flatpak-builder --user --install build packaging/io.github.enplayer.ENPlayer.flatpak.yml)
+# NOTE: not built/tested in this environment (flatpak-builder was not installed).
+# mpv is built against the runtime's FFmpeg; codecs come from the GNOME/freedesktop runtime, nothing proprietary is bundled.
+app-id: io.github.enplayer.ENPlayer
+runtime: org.gnome.Platform
+runtime-version: '46'
+sdk: org.gnome.Sdk
+command: enplayer
+finish-args:
+  - --share=ipc
+  - --socket=wayland
+  - --socket=fallback-x11
+  - --socket=pulseaudio
+  - --device=dri
+  - --filesystem=home:ro
+  - --filesystem=xdg-videos:ro
+  - --filesystem=/media:ro
+  - --filesystem=/run/media:ro
+  - --filesystem=xdg-pictures/Screenshots:create
+  - --talk-name=org.freedesktop.FileManager1
+modules:
+  - name: libass
+    config-opts: [--disable-static]
+    sources:
+      - type: archive
+        url: https://github.com/libass/libass/releases/download/0.17.3/libass-0.17.3.tar.xz
+        sha256: FILL_IN  # run: curl -L <url> | sha256sum
+  - name: mpv
+    buildsystem: meson
+    config-opts: [-Dlibmpv=true, -Dcplayer=false, -Dlua=disabled, -Djavascript=disabled,
+                  -Dmanpage-build=disabled, -Dvulkan=disabled]
+    sources:
+      - type: archive
+        url: https://github.com/mpv-player/mpv/archive/refs/tags/v0.38.0.tar.gz
+        sha256: FILL_IN  # run: curl -L <url> | sha256sum
+  - name: python-deps
+    buildsystem: simple
+    build-commands:
+      - pip3 install --no-index --find-links=. --prefix=/app python-mpv
+    sources:
+      - type: file
+        url: https://files.pythonhosted.org/packages/py3/p/python-mpv/python_mpv-1.0.8-py3-none-any.whl
+        sha256: FILL_IN  # run: curl -L <url> | sha256sum
+  - name: neplayer
+    buildsystem: simple
+    build-commands:
+      - install -d /app/lib/neplayer
+      - cp -r neplayer /app/lib/neplayer/
+      - printf '#!/bin/sh\nexport PYTHONPATH=/app/lib/neplayer\nexec python3 -m neplayer.main "$@"\n' > /app/bin/enplayer
+      - chmod +x /app/bin/enplayer
+      - install -Dm644 packaging/io.github.enplayer.ENPlayer.desktop /app/share/applications/io.github.enplayer.ENPlayer.desktop
+      - install -Dm644 packaging/io.github.enplayer.ENPlayer.svg /app/share/icons/hicolor/scalable/apps/io.github.enplayer.ENPlayer.svg
+      - install -Dm644 packaging/io.github.enplayer.ENPlayer.metainfo.xml /app/share/metainfo/io.github.enplayer.ENPlayer.metainfo.xml
+    sources:
+      - type: dir
+        path: ..

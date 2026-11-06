@@ -1,0 +1,93 @@
+# Builds ready-to-install packages for Windows and Ubuntu.
+# - Every push / manual run: installers are uploaded as workflow artifacts.
+# - Pushing a tag like v1.4.1: a GitHub Release is created with the installers attached;
+#   installed copies of ENPlayer find it through their built-in update check.
+name: Build installers
+
+on:
+  push:
+    branches: [main, master]
+    tags: ['v*']
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  linux:
+    name: Ubuntu .deb
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y python3-gi gir1.2-gtk-4.0 gir1.2-adw-1 libmpv1 ffmpeg python3-pil python3-numpy rsync
+          pip3 install --user python-mpv
+      - name: Unit tests
+        run: python3 -m unittest discover -s tests -v
+      - name: Build .deb
+        run: bash packaging/build-deb.sh
+      - name: Check the .deb installs
+        run: |
+          sudo apt-get install -y ./dist/enplayer_*_all.deb
+          test -x /usr/bin/enplayer
+          python3 -s -c "import sys; sys.path.insert(0, '/usr/lib/enplayer'); import mpv, neplayer.ui.main_window; print('ok', mpv.__file__)"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: enplayer-ubuntu-deb
+          path: dist/*.deb
+
+  windows:
+    name: Windows installer
+    runs-on: windows-2022
+    defaults:
+      run:
+        shell: msys2 {0}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: msys2/setup-msys2@v2
+        with:
+          msystem: UCRT64
+          update: true
+          install: >-
+            pacman-contrib
+            rsync
+      - name: Build bundle
+        run: bash packaging/windows/build-windows.sh
+      - name: Unit tests with the bundled Python + FFmpeg
+        run: |
+          export PATH="$PWD/dist/windows/ENPlayer/bin:$PATH"
+          dist/windows/ENPlayer/bin/python.exe -m unittest discover -s tests -v
+      - name: Build installer (Inno Setup)
+        shell: pwsh
+        run: |
+          if (-not (Get-Command iscc -ErrorAction SilentlyContinue)) { choco install innosetup --no-progress -y }
+          $iscc = (Get-Command iscc -ErrorAction SilentlyContinue).Source
+          if (-not $iscc) { $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" }
+          $ver = (Select-String -Path neplayer\config.py -Pattern "^VERSION = '(.+)'").Matches[0].Groups[1].Value
+          & $iscc "/DAppVersion=$ver" packaging\windows\enplayer.iss
+      - uses: actions/upload-artifact@v4
+        with:
+          name: enplayer-windows-installer
+          path: dist/ENPlayer-Setup-*.exe
+
+  release:
+    name: Publish release
+    # Publish as soon as the Ubuntu package built; a failing Windows build must not block updates.
+    if: ${{ !cancelled() && startsWith(github.ref, 'refs/tags/v') && needs.linux.result == 'success' }}
+    needs: [linux, windows]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: out
+          merge-multiple: true
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            out/*.deb
+            out/*.exe
+          fail_on_unmatched_files: false
+          generate_release_notes: true

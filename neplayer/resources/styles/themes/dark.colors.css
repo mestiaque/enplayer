@@ -1,0 +1,25 @@
+/* Dark — Lumen charcoal */
+@define-color ff_bg #131315;
+@define-color ff_bg_deep #19191c;
+@define-color ff_surface #222226;
+@define-color ff_surface_hi #2c2c32;
+@define-color ff_border rgba(255, 255, 255, 0.08);
+@define-color ff_text_dim #9e9ea8;
+@define-color ff_selected_fg #e9e9ed;
+
+@define-color window_bg_color @ff_bg;
+@define-color view_bg_color @ff_bg;
+@define-color headerbar_bg_color @ff_bg;
+@define-color popover_bg_color #19191c;
+@define-color card_bg_color @ff_surface;
+@define-color dialog_bg_color #19191c;
+
+/* player */
+@define-color ff_player_bg #000000;
+@define-color ff_player_fg #ffffff;
+@define-color ff_player_dim rgba(255, 255, 255, 0.62);
+@define-color ff_track rgba(255, 255, 255, 0.25);
+@define-color ff_play_bg #ffffff;
+@define-color ff_play_fg #000000;
+@define-color ff_osd_bg rgba(18, 18, 24, 0.86);
+@define-color ff_text_faint #686872;

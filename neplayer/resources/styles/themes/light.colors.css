@@ -1,0 +1,25 @@
+/* Light — Lumen paper white */
+@define-color ff_bg #f4f4f6;
+@define-color ff_bg_deep #fcfcfd;
+@define-color ff_surface #ffffff;
+@define-color ff_surface_hi #ececf0;
+@define-color ff_border #dcdce2;
+@define-color ff_text_dim #585864;
+@define-color ff_selected_fg #18181b;
+
+@define-color window_bg_color @ff_bg;
+@define-color view_bg_color @ff_bg;
+@define-color headerbar_bg_color @ff_bg;
+@define-color popover_bg_color #fcfcfd;
+@define-color card_bg_color #ffffff;
+@define-color dialog_bg_color #fcfcfd;
+
+/* player */
+@define-color ff_player_bg #ececf1;
+@define-color ff_player_fg #1d1b2a;
+@define-color ff_player_dim rgba(20, 20, 30, 0.6);
+@define-color ff_track rgba(0, 0, 0, 0.14);
+@define-color ff_play_bg #1d1b2a;
+@define-color ff_play_fg #ffffff;
+@define-color ff_osd_bg rgba(255, 255, 255, 0.94);
+@define-color ff_text_faint #94949e;

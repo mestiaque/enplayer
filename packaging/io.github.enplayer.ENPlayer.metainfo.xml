@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>io.github.enplayer.ENPlayer</id>
+  <name>ENPlayer</name>
+  <summary>Video library and player with live hover previews</summary>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>GPL-3.0-or-later</project_license>
+  <description>
+    <p>ENPlayer turns your local folders into a fast, beautiful video library. Rest the pointer on any
+    video to watch a live preview straight from the original file, then play it in a full-featured
+    mpv-powered player with resume, subtitles, audio tracks and keyboard control.</p>
+  </description>
+  <launchable type="desktop-id">io.github.enplayer.ENPlayer.desktop</launchable>
+  <content_rating type="oars-1.1"/>
+  <releases><release version="1.0.0" date="2026-11-04"/></releases>
+</component>

@@ -1,0 +1,4 @@
+# System packages (apt): python3-gi gir1.2-gtk-4.0 gir1.2-adw-1 libmpv1 ffmpeg python3-pil
+PyGObject>=3.42
+python-mpv>=1.0.4
+Pillow>=9.0

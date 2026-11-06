@@ -1,0 +1,19 @@
+[Desktop Entry]
+Type=Application
+Name=ENPlayer
+GenericName=Video Player
+Comment=Video and music library with live hover previews
+Exec=enplayer %U
+TryExec=enplayer
+Icon=io.github.enplayer.ENPlayer
+Terminal=false
+StartupNotify=true
+StartupWMClass=enplayer
+Categories=AudioVideo;Video;Player;GTK;
+Keywords=video;movie;music;audio;mp3;flac;player;library;mpv;media;
+MimeType=video/mp4;video/x-matroska;video/webm;video/x-msvideo;video/quicktime;video/x-ms-wmv;video/x-flv;video/x-m4v;video/mpeg;video/mp2t;video/3gpp;audio/mpeg;audio/flac;audio/x-flac;audio/mp4;audio/x-m4a;audio/aac;audio/ogg;audio/x-vorbis+ogg;audio/opus;audio/x-opus+ogg;audio/wav;audio/x-wav;audio/x-ms-wma;audio/x-aiff;audio/x-ape;audio/x-wavpack;audio/x-matroska;inode/directory;
+Actions=open-file;
+
+[Desktop Action open-file]
+Name=Open File…
+Exec=enplayer

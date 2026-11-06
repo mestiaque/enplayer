@@ -1,0 +1,382 @@
+/* ENPlayer — base styles on top of libadwaita (theme-neutral) */
+
+/* Colours come from themes/<theme>.colors.css, loaded before this file;
+   themes/<theme>.css is loaded after it for theme-specific rules. */
+
+window.neplayer { background-color: @ff_bg; }
+
+/* ---------------------------------------------------------------- sidebar
+   Same proportions as Lumen: 232px, 32px rows, uppercase section labels. */
+window.neplayer, .settings-dialog { font-size: 13px; }
+.ff-sidebar {
+  background-color: @ff_bg_deep;
+  border-right: 1px solid @ff_border;
+}
+.ff-sidebar headerbar { background: transparent; box-shadow: none; min-height: 44px; padding-left: 6px; }
+.ff-sidebar scrolledwindow, .ff-sidebar viewport { background: transparent; }
+.brand-name { font-weight: 700; font-size: 14px; letter-spacing: -0.2px; }
+.ff-sidebar .navigation-sidebar { background: transparent; padding: 0 8px 16px; }
+.ff-sidebar .navigation-sidebar > row {
+  padding: 0 8px; margin: 1px 0; border-radius: 6px; min-height: 32px; color: @ff_text_dim;
+}
+.ff-sidebar .navigation-sidebar > row:hover { background-color: @ff_surface; color: @ff_selected_fg; }
+.ff-sidebar .navigation-sidebar > row image.nav-icon { -gtk-icon-size: 16px; }
+.ff-sidebar .navigation-sidebar > row:selected {
+  background-color: alpha(@ff_accent, 0.15);
+  color: @ff_selected_fg;
+}
+.ff-sidebar .navigation-sidebar > row:selected image.nav-icon { color: @ff_accent; }
+.nav-section {
+  margin: 16px 8px 4px 16px; min-height: 24px;
+  font-size: 11px; font-weight: 700; letter-spacing: 0.8px; color: @ff_text_faint;
+}
+.nav-section-btn { min-width: 22px; min-height: 22px; padding: 0; border-radius: 4px; color: @ff_text_faint; }
+.nav-section-btn:hover { color: @ff_selected_fg; }
+.nav-count { font-size: 11px; color: @ff_text_faint; font-feature-settings: "tnum"; }
+.nav-sep { margin: 8px 6px; background: @ff_border; }
+
+/* ------------------------------------------------------------ status bar */
+.ff-statusbar {
+  min-height: 28px; padding: 0 12px; font-size: 11px; color: @ff_text_dim;
+  border-top: 1px solid @ff_border; background-color: @ff_bg_deep;
+}
+.ff-statusbar .dim { color: @ff_text_faint; }
+
+/* ------------------------------------------------------------ header bar */
+.ff-main headerbar {
+  background: alpha(@ff_bg_deep, 0.8); box-shadow: none; min-height: 48px;
+  border-bottom: 1px solid @ff_border;
+}
+.header-title { font-size: 13px; font-weight: 700; }
+.header-subtitle { font-size: 11px; color: @ff_text_faint; }
+.page-titles { margin-left: 4px; }
+.library-search { border-radius: 6px; min-height: 32px; background-color: @ff_bg; border: 1px solid @ff_border; }
+.filter-active { color: @accent_color; background-color: alpha(@ff_accent, 0.18); }
+.filter-popover { padding: 8px; min-width: 300px; }
+.spacer { background: transparent; min-width: 6px; }
+
+/* ----------------------------------------------------------------- pages */
+.page-header { padding: 14px 28px 6px; }
+.page-title { font-size: 24px; font-weight: 800; letter-spacing: -0.4px; }
+.page-count { color: @ff_text_dim; font-size: 13px; margin-top: 6px; }
+.chip {
+  padding: 2px 10px; border-radius: 99px; font-size: 12px; min-height: 24px;
+  background-color: alpha(@ff_accent, 0.18); color: @accent_color;
+}
+.chip:hover { background-color: alpha(@ff_accent, 0.30); }
+.compact-status { padding-bottom: 80px; }
+
+gridview.video-grid { background: transparent; padding: 10px 18px 40px; }
+gridview.video-grid > child { padding: 10px; border-radius: 16px; background: transparent; }
+gridview.video-grid > child:hover, gridview.video-grid > child:focus { background: transparent; }
+
+/* ------------------------------------------------------------------ home */
+.home { padding: 6px 28px 48px; }
+.hero { padding: 18px 0 0; }
+.hero-title { font-size: 30px; font-weight: 800; letter-spacing: -0.6px; }
+.hero-sub { color: @ff_text_dim; font-size: 14px; }
+.shelf-title { font-size: 18px; font-weight: 700; }
+.see-all { font-size: 13px; color: @accent_color; padding: 2px 10px; }
+.shelf-row { padding: 6px 2px 14px; }
+
+/* ------------------------------------------------------------ video card */
+.video-card { padding: 0; }
+.thumb-frame {
+  border-radius: 14px;
+  background-color: @ff_surface;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+  transition: box-shadow 180ms ease;
+}
+.video-card.hover .thumb-frame {
+  box-shadow: 0 0 0 2px alpha(@ff_accent, 0.95), 0 14px 32px rgba(0, 0, 0, 0.55);
+}
+.thumb-placeholder { color: alpha(@ff_text_dim, 0.4); }
+.thumb { background-color: black; }
+.preview-surface { background-color: black; }
+
+.badge {
+  margin: 8px; padding: 2px 7px; border-radius: 6px;
+  font-size: 11px; font-weight: 700; color: white;
+  background-color: rgba(0, 0, 0, 0.74);
+  font-feature-settings: "tnum";
+}
+.badge.res { background-color: rgba(0, 0, 0, 0.55); border: 1px solid rgba(255, 255, 255, 0.25); }
+.badge.res.uhd {
+  border-color: transparent;
+  background-image: linear-gradient(135deg, @ff_accent, @ff_accent_hot);
+}
+.badge.error { background-color: #c01c28; }
+
+.fav-button {
+  margin: 6px; min-width: 30px; min-height: 30px; padding: 0;
+  background-color: rgba(0, 0, 0, 0.55); color: white;
+  opacity: 0; transition: opacity 150ms ease, background-color 150ms ease;
+}
+.video-card.hover .fav-button, .video-card.is-favorite .fav-button { opacity: 1; }
+.video-card.is-favorite .fav-button { color: #ffc940; }
+.fav-button:hover { background-color: rgba(0, 0, 0, 0.8); }
+
+.play-hint {
+  color: white; padding: 14px; border-radius: 99px;
+  background-color: alpha(@ff_accent, 0.85);
+  opacity: 0; transition: opacity 160ms ease;
+  -gtk-icon-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+}
+.video-card.hover .play-hint { opacity: 0.95; }
+.video-card.preview-live .play-hint { opacity: 0; }
+.video-card.preview-live .res-badge { opacity: 0; }
+
+.resume-bar { margin: 0; padding: 0; min-height: 4px; }
+.resume-bar trough { min-height: 4px; border-radius: 0; background-color: rgba(255, 255, 255, 0.22); }
+.resume-bar progress { min-height: 4px; border-radius: 0; background-color: #ff4d6d; }
+
+.card-title { font-weight: 650; font-size: 14px; }
+.card-meta { font-size: 12px; color: @ff_text_dim; font-feature-settings: "tnum"; }
+
+/* --------------------------------------------------------------- folders */
+.folders-page { padding: 24px 12px 48px; }
+.settings-page { background: transparent; }
+
+/* ---------------------------------------------------------------- player */
+.player { background-color: @ff_player_bg; }
+.player-top { padding: 16px 20px 44px; }
+.player-title { font-size: 17px; font-weight: 700; color: @ff_player_fg; }
+.player-subtitle { font-size: 12px; color: @ff_player_dim; font-feature-settings: "tnum"; }
+.player-controls { padding: 48px 22px 14px; }
+.player-btn { color: @ff_player_fg; min-width: 38px; min-height: 38px; border-radius: 10px; }
+.player-btn:hover { background-color: alpha(@ff_player_fg, 0.12); }
+.player-btn.has-tracks { color: @accent_color; }
+.play-btn {
+  min-width: 46px; min-height: 46px; margin: 0 6px;
+  background-color: @ff_play_bg; color: @ff_play_fg; border-radius: 99px;
+}
+.play-btn:hover { background-color: alpha(@ff_play_bg, 0.85); }
+.speed-btn { font-weight: 700; font-feature-settings: "tnum"; }
+.time-label { color: @ff_player_fg; font-size: 13px; font-weight: 600; font-feature-settings: "tnum"; min-width: 52px; }
+.player-status { color: @ff_player_dim; font-size: 12px; margin-left: 10px; }
+
+scale.seek-bar trough { min-height: 4px; border-radius: 99px; background-color: @ff_track; }
+scale.seek-bar:hover trough { min-height: 6px; }
+scale.seek-bar highlight { border-radius: 99px; background-image: linear-gradient(90deg, @ff_accent, @ff_accent_hot); }
+scale.seek-bar slider {
+  min-width: 14px; min-height: 14px; margin: -5px; background: white; border: none;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.5); opacity: 0; transition: opacity 120ms;
+}
+scale.seek-bar:hover slider { opacity: 1; }
+scale.volume-bar trough { min-height: 4px; background-color: @ff_track; }
+scale.volume-bar highlight { background-color: @ff_player_fg; }
+scale.volume-bar slider { min-width: 12px; min-height: 12px; margin: -4px; background: white; border: none; }
+scale.volume-bar marks indicator { min-height: 0; }
+
+.osd-message {
+  padding: 10px 18px; border-radius: 12px; font-size: 15px; font-weight: 600; color: @ff_player_fg;
+  background-color: @ff_osd_bg; font-feature-settings: "tnum";
+}
+.center-flash {
+  padding: 22px; border-radius: 99px; color: @ff_player_fg;
+  background-color: alpha(@ff_osd_bg, 0.7);
+}
+.player-error { padding: 32px 40px; border-radius: 18px; background-color: @ff_osd_bg; color: @ff_player_fg; }
+.up-next {
+  padding: 16px 18px; border-radius: 14px; min-width: 280px;
+  background-color: @ff_osd_bg; color: @ff_player_fg;
+  border: 1px solid @ff_border;
+}
+.up-next .caption-heading { color: @accent_color; font-size: 11px; font-weight: 800; letter-spacing: 1px; }
+
+/* ---------------------------------------------------------- misc dialogs */
+.keycap {
+  padding: 2px 8px; border-radius: 6px; font-size: 12px; font-weight: 700;
+  background-color: @ff_surface_hi; border: 1px solid @ff_border;
+}
+
+/* -------------------------------------------------------- settings dialog */
+.settings-dialog { background-color: @dialog_bg_color; }
+.settings-head { padding: 12px 14px 12px 22px; }
+.settings-title { font-size: 16px; font-weight: 700; }
+.settings-nav { background: transparent; padding: 10px 8px; }
+.settings-nav > row {
+  padding: 8px 12px; margin: 1px 0; border-radius: 8px; color: @ff_text_dim;
+}
+.settings-nav > row:hover { color: @ff_selected_fg; background-color: alpha(@ff_text_dim, 0.08); }
+.settings-nav > row:selected {
+  color: @ff_selected_fg;
+  background-color: alpha(@ff_accent, 0.16);
+}
+/* Flat rows with hairline separators instead of boxed cards */
+.settings-dialog list.boxed-list,
+.settings-dialog list.content {
+  background: transparent; box-shadow: none; border: none;
+}
+.settings-dialog list.boxed-list > row,
+.settings-dialog list.content > row {
+  background: transparent; border-radius: 0;
+  border-bottom: 1px solid @ff_border; padding: 4px 0;
+}
+.settings-dialog list.boxed-list > row:last-child,
+.settings-dialog list.content > row:last-child { border-bottom: none; }
+.settings-dialog list.boxed-list > row:hover,
+.settings-dialog list.content > row:hover { background: alpha(@ff_text_dim, 0.05); }
+
+/* Lumen-style dialog typography and accent swatches */
+.settings-title { font-size: 15px; }
+.settings-dialog row .title { font-size: 13px; }
+.settings-dialog row .subtitle { font-size: 11px; color: @ff_text_faint; }
+.settings-nav > row { min-height: 32px; padding: 0 12px; font-size: 13px; }
+.settings-dialog .about-title .title { font-size: 17px; font-weight: 700; }
+button.accent-dot {
+  min-width: 24px; min-height: 24px; padding: 0; border-radius: 99px;
+  color: white; box-shadow: none; border: none;
+}
+button.accent-dot.selected { box-shadow: 0 0 0 2px @dialog_bg_color, 0 0 0 4px @ff_accent; }
+
+/* ---------------------------------------------- header bar (Lumen toolbar) */
+.ff-main headerbar { padding: 0 6px; }
+.ff-main headerbar > windowhandle > box { border-spacing: 2px; }
+button.hb-btn, .hb-btn > button {
+  min-width: 32px; min-height: 32px; padding: 0; border-radius: 6px;
+  color: @ff_text_dim; background: none; box-shadow: none;
+}
+button.hb-btn:hover, .hb-btn > button:hover { background-color: @ff_surface_hi; color: @ff_selected_fg; }
+button.hb-btn:checked, button.hb-btn:active, .hb-btn > button:checked { background: none; color: @ff_text_dim; }
+button.hb-btn:checked:hover { background-color: @ff_surface_hi; color: @ff_selected_fg; }
+button.hb-btn:disabled { color: alpha(@ff_text_dim, 0.35); }
+button.hb-btn image, .hb-btn > button image { -gtk-icon-size: 16px; }
+.filter-active > button { color: @ff_accent; background-color: alpha(@ff_accent, 0.15); }
+separator.hb-sep { min-width: 1px; margin: 14px 6px; background: @ff_border; }
+.ff-sidebar .brand-name { color: @ff_selected_fg; }
+
+/* -------------------------------------- settings content (Lumen rows) */
+.set-page { padding: 6px 28px 28px; }
+.set-row { padding: 12px 0; border-bottom: 1px solid @ff_border; }
+.set-title { font-size: 13px; color: @ff_selected_fg; }
+.set-hint { font-size: 11px; color: @ff_text_faint; margin-top: 2px; }
+.set-value { font-size: 12px; color: @ff_text_dim; }
+.set-note {
+  margin-top: 18px; padding: 12px 14px; border-radius: 8px; font-size: 12px;
+  background-color: @ff_surface; color: @ff_text_dim;
+}
+.about-head { padding: 18px 0 14px; border-bottom: 1px solid @ff_border; }
+.about-name { font-size: 18px; font-weight: 700; }
+.set-section-title {
+  margin-top: 22px; padding-bottom: 4px; font-size: 11px; font-weight: 700; letter-spacing: 0.06em;
+  color: @ff_text_faint;
+}
+.settings-dialog button.set-link {
+  padding: 0; min-height: 0; background: none; border: none; box-shadow: none; font-size: 12px; color: @ff_accent;
+}
+.settings-dialog button.set-link:hover { text-decoration: underline; }
+.settings-nav { background: transparent; padding: 8px; }
+.settings-dialog dropdown > button, .settings-dialog spinbutton, .settings-dialog entry {
+  min-height: 30px; border-radius: 6px; box-shadow: none;
+  background-color: @ff_bg; border: 1px solid @ff_border; color: @ff_selected_fg;
+}
+.settings-dialog dropdown > button:hover { border-color: @ff_text_faint; }
+.settings-dialog switch { border-radius: 99px; }
+.settings-dialog switch:checked { background-color: @ff_accent; }
+.settings-dialog button:not(.flat):not(.accent-dot):not(.theme-card):not(.destructive-action):not(.set-link) {
+  min-height: 30px; border-radius: 6px; padding: 0 12px; box-shadow: none;
+  background-color: @ff_surface_hi; border: 1px solid @ff_border;
+}
+
+/* Theme preview cards */
+.theme-cards { margin-top: 2px; }
+button.theme-card {
+  padding: 8px 8px 6px; border-radius: 10px; background: transparent; box-shadow: none;
+  border: 1px solid @ff_border; color: @ff_text_dim; font-size: 12px;
+}
+button.theme-card:hover { border-color: @ff_text_faint; }
+button.theme-card:checked {
+  border-color: @ff_accent; color: @ff_selected_fg;
+  background-color: alpha(@ff_accent, 0.07); box-shadow: 0 0 0 1px @ff_accent;
+}
+.theme-preview { min-width: 136px; min-height: 82px; border-radius: 6px; }
+.tp-side { min-width: 32px; border-radius: 6px 0 0 6px; }
+.tp-main { padding: 7px; }
+.tp-bar { min-height: 9px; border-radius: 3px; }
+.tp-tile { min-height: 38px; border-radius: 4px; }
+.theme-preview-dark { background-color: #131315; border: 1px solid #2c2c32; }
+.theme-preview-dark .tp-side { background-color: #19191c; }
+.theme-preview-dark .tp-bar { background-color: #2c2c32; }
+.theme-preview-dark .tp-tile { background-color: #222226; }
+.theme-preview-light { background-color: #f4f4f6; border: 1px solid #dcdce2; }
+.theme-preview-light .tp-side { background-color: #fcfcfd; border-right: 1px solid #dcdce2; }
+.theme-preview-light .tp-bar { background-color: #dcdce2; }
+.theme-preview-light .tp-tile { background-color: #ffffff; border: 1px solid #e4e4ea; }
+.theme-preview-glass {
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background-color: #1a1530;
+  background-image: radial-gradient(circle at 15% 20%, rgba(139, 108, 255, 0.9), transparent 55%),
+                    radial-gradient(circle at 90% 10%, rgba(226, 64, 122, 0.8), transparent 50%),
+                    radial-gradient(circle at 70% 95%, rgba(56, 189, 248, 0.75), transparent 55%);
+}
+.theme-preview-glass .tp-side { background-color: rgba(255, 255, 255, 0.14); border-right: 1px solid rgba(255, 255, 255, 0.22); }
+.theme-preview-glass .tp-bar { background-color: rgba(255, 255, 255, 0.3); }
+.theme-preview-glass .tp-tile { background-color: rgba(255, 255, 255, 0.18); border: 1px solid rgba(255, 255, 255, 0.28); }
+
+/* --------------------------------- controls sized like Lumen's (web) ones */
+switch { min-width: 36px; min-height: 20px; padding: 0; border-radius: 99px; }
+switch > slider { min-width: 16px; min-height: 16px; margin: 2px; border-radius: 99px; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25); }
+switch:checked { background-color: @ff_accent; }
+dropdown > button {
+  min-height: 32px; padding: 0 10px; border-radius: 6px; font-size: 13px; font-weight: 400;
+}
+dropdown > button label { font-weight: 400; }
+dropdown > button arrow, dropdown > button image { -gtk-icon-size: 14px; color: @ff_text_dim; }
+.settings-dialog button:not(.flat):not(.accent-dot):not(.theme-card) {
+  min-height: 28px; padding: 0 12px; font-size: 12px; font-weight: 500;
+}
+.settings-dialog spinbutton { min-height: 30px; font-size: 13px; }
+.settings-dialog spinbutton button { min-width: 26px; padding: 0; }
+.settings-dialog spinbutton button image { -gtk-icon-size: 14px; }
+.settings-dialog .settings-head button { min-width: 28px; min-height: 28px; padding: 0; }
+.settings-dialog .settings-head button image { -gtk-icon-size: 16px; }
+
+/* Window buttons: 24px circles like Lumen's */
+windowcontrols { border-spacing: 8px; }
+windowcontrols > button { min-width: 24px; min-height: 24px; padding: 0; margin: 0; }
+windowcontrols > button > image {
+  min-width: 24px; min-height: 24px; padding: 0; border-radius: 99px;
+  background-color: @ff_surface_hi; color: @ff_text_dim; -gtk-icon-size: 14px;
+}
+windowcontrols > button:hover > image { background-color: @ff_border; color: @ff_selected_fg; }
+windowcontrols > button.close:hover > image { background-color: #ef4444; color: white; }
+
+/* ------------------------------------------------------------ music player */
+.now-playing { background-color: #101014; }
+.np-scrim { background-color: rgba(10, 10, 16, 0.55); }
+.np-center { padding-bottom: 60px; }
+.np-cover {
+  border-radius: 14px; margin-bottom: 18px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+.np-title { font-size: 26px; font-weight: 800; letter-spacing: -0.4px; color: white; }
+.np-artist { font-size: 15px; font-weight: 600; color: rgba(255, 255, 255, 0.82); }
+.np-album { font-size: 13px; color: rgba(255, 255, 255, 0.6); }
+.player.audio-mode .player-top { background-image: none; }
+.player-btn.toggle-on, togglebutton.player-btn:checked { color: @ff_accent; background-color: alpha(@ff_accent, 0.16); }
+
+/* Mini player (library) */
+.mini-player { background-color: @ff_bg_deep; border-top: 1px solid @ff_border; }
+.mini-progress, .mini-progress trough { min-height: 2px; padding: 0; margin: 0; background-color: @ff_border; border-radius: 0; }
+.mini-progress progress { min-height: 2px; background-color: @ff_accent; border-radius: 0; }
+.mini-row { padding: 8px 12px; }
+.mini-cover { border-radius: 6px; background-color: @ff_surface; }
+.mini-title { font-size: 13px; font-weight: 600; color: @ff_selected_fg; }
+.mini-artist { font-size: 11px; color: @ff_text_dim; }
+.mini-time { font-size: 11px; color: @ff_text_faint; font-feature-settings: "tnum"; margin-right: 6px; }
+button.hb-btn.mini-play { background-color: @ff_accent; color: white; border-radius: 99px; }
+button.hb-btn.mini-play:hover { background-color: shade(@ff_accent, 1.1); color: white; }
+
+/* Visualizer settings popover */
+.viz-panel-box { padding: 12px; min-width: 340px; }
+.viz-panel-title { font-size: 14px; font-weight: 700; }
+.viz-label { font-size: 12px; color: @ff_text_dim; }
+.viz-panel scale { min-height: 22px; }
+.viz-panel scale trough { min-height: 4px; border-radius: 99px; background-color: @ff_border; }
+.viz-panel scale highlight { border-radius: 99px; background-color: @ff_accent; }
+.viz-panel scale slider { min-width: 14px; min-height: 14px; margin: -5px; border-radius: 99px; background: white; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35); }
+
+/* Update dialog */
+.update-box { padding: 22px 24px 18px; }
+.update-notes { font-size: 12px; padding: 10px 12px; border-radius: 8px; background-color: @ff_surface; }
