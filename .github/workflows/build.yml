@@ -22,12 +22,15 @@ jobs:
   linux:
     name: Ubuntu .deb
     runs-on: ubuntu-22.04
+    timeout-minutes: 25   # apt has hung here twice; fail fast instead of waiting hours
+    env:
+      DEBIAN_FRONTEND: noninteractive
     steps:
       - uses: actions/checkout@v4
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y python3-gi gir1.2-gtk-4.0 gir1.2-adw-1 libmpv1 ffmpeg python3-pil python3-numpy rsync
+          sudo -E apt-get install -y --no-install-recommends python3-gi gir1.2-gtk-4.0 gir1.2-adw-1 libmpv1 ffmpeg python3-pil python3-numpy rsync
           pip3 install --user python-mpv
       - name: Unit tests
         run: python3 -m unittest discover -s tests -v
@@ -46,6 +49,7 @@ jobs:
   windows:
     name: Windows installer
     runs-on: windows-2022
+    timeout-minutes: 60
     defaults:
       run:
         shell: msys2 {0}
