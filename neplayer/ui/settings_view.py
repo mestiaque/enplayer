@@ -121,7 +121,8 @@ class SettingsView(Gtk.Box):
         p = self._pages['Playback']
         self._switch(p, 'Resume playback', 'Continue where you left off', 'resume_playback')
         self._switch(p, 'Play next video automatically', None, 'autoplay_next')
-        self._spin(p, 'Default volume', None, 'default_volume', 0, 130, 5)
+        self._spin(p, 'Default volume', 'Volume when ENPlayer starts (100 = the file\u2019s own loudness)',
+                   'default_volume', 0, 130, 5)
         self._dropdown(p, 'Default speed', None, 'playback_speed',
                        [('0.5×', 0.5), ('0.75×', 0.75), ('Normal', 1.0), ('1.25×', 1.25), ('1.5×', 1.5), ('2×', 2.0)])
         self._entry(p, 'Preferred subtitle language', 'e.g. eng,ben (empty disables auto-select)', 'subtitle_lang')

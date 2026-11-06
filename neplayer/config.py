@@ -11,7 +11,7 @@ DEVELOPER = 'M. Estiaque Ahmed Khan'
 DEVELOPER_EMAIL = 'info@mestiaque.com'
 DEVELOPER_WEBSITE = 'https://mestiaque.com'
 COPYRIGHT_YEAR = '2026'
-VERSION = '1.4.3'
+VERSION = '1.4.4'
 
 if IS_WINDOWS:
     _local = Path(os.environ.get('LOCALAPPDATA', Path.home() / 'AppData' / 'Local'))
@@ -66,7 +66,7 @@ DEFAULT_SETTINGS = {
     'sidebar_visible': True,
     # playback
     'resume_playback': True,
-    'default_volume': 80,
+    'default_volume': 100,  # mpv's volume curve is cubic: 50 is only ~12 % loudness
     'playback_speed': 1.0,
     'subtitle_lang': '',
     'audio_lang': '',
@@ -80,7 +80,7 @@ DEFAULT_SETTINGS = {
     'startup_view': 'home',  # home | all | continue | favorites
     'keep_history': True,
     'sort': 'recent',
-    'volume': 80,
+    'volume': 100,  # current session volume (the player starts at default_volume)
 }
 
 # Same accent palette as Lumen.

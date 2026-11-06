@@ -71,7 +71,7 @@ class PlayerView(Gtk.Overlay):
 
         self.area = MpvGLArea(
             hwdec=self.settings['hwdec'], keep_open='yes', volume_max='130',
-            volume=str(self.settings['volume']), sub_auto='fuzzy', audio_file_auto='fuzzy',
+            volume=str(self.settings['default_volume']), sub_auto='fuzzy', audio_file_auto='fuzzy',
             osd_level='0', ytdl='no', hr_seek='yes', cache='yes', demuxer_max_bytes='150MiB',
             screenshot_directory=str(Path(GLib.get_user_special_dir(
                 GLib.UserDirectory.DIRECTORY_PICTURES) or Path.home()) / 'Screenshots'),
