@@ -380,3 +380,6 @@ button.hb-btn.mini-play:hover { background-color: shade(@ff_accent, 1.1); color:
 /* Update dialog */
 .update-box { padding: 22px 24px 18px; }
 .update-notes { font-size: 12px; padding: 10px 12px; border-radius: 8px; background-color: @ff_surface; }
+
+/* Player top bar: close (exit play mode) */
+.player-top .player-close:hover { background-color: rgba(239, 68, 68, 0.85); color: #ffffff; }

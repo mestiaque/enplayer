@@ -10,7 +10,7 @@ APP_NAME = 'ENPlayer'
 DEVELOPER = 'Estiaque'
 DEVELOPER_EMAIL = 'natoreit20@gmail.com'
 COPYRIGHT_YEAR = '2026'
-VERSION = '1.4.1'
+VERSION = '1.4.2'
 
 if IS_WINDOWS:
     _local = Path(os.environ.get('LOCALAPPDATA', Path.home() / 'AppData' / 'Local'))

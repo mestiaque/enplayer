@@ -158,6 +158,9 @@ class PlayerView(Gtk.Overlay):
         bar.append(self.viz_menu)
         bar.append(_icon_button('dialog-information-symbolic', 'Statistics (I)',
                                 lambda: self._do('stats', None)))
+        close = _icon_button('window-close-symbolic', 'Close player (Esc)', self.close)
+        close.add_css_class('player-close')
+        bar.append(close)
         self.top = Gtk.Revealer(transition_type=Gtk.RevealerTransitionType.CROSSFADE,
                                 transition_duration=220, reveal_child=True, valign=Gtk.Align.START)
         self.top.set_child(bar)

@@ -2,7 +2,7 @@ from setuptools import find_packages, setup
 
 setup(
     name='neplayer',
-    version='1.4.1',
+    version='1.4.2',
     description='Native GTK4 video library and player with live hover previews',
     packages=find_packages(exclude=['tests']),
     package_data={'neplayer': ['resources/styles/*.css', 'resources/styles/themes/*.css', 'resources/icons/NEPLAYER/index.theme', 'visualizer/*.glsl', 'visualizer/presets/*.glsl', 'resources/icons/NEPLAYER/*.txt', 'resources/icons/NEPLAYER/scalable/actions/*.svg', 'resources/icons/*.svg', 'resources/icons/*.png']},
