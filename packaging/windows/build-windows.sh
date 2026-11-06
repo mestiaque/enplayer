@@ -80,16 +80,23 @@ echo "==> Pre-compiling Python bytecode"
 "$OUT/bin/python.exe" -m compileall -q "$SITE/neplayer" "$SITE/mpv.py" || true
 
 echo "==> Smoke test (imports with the bundled interpreter only)"
-PATH="$OUT/bin:/usr/bin" "$OUT/bin/python.exe" - <<'PY'
+PATH="$OUT/bin:/usr/bin" "$OUT/bin/python.exe" -X faulthandler -u - <<'PY'
+def step(name):
+    print('  ok:', name, flush=True)
 import gi
 gi.require_version('Gtk', '4.0'); gi.require_version('Adw', '1')
 from gi.repository import Gtk, Adw
-import mpv
+step(f'GTK {Gtk.get_major_version()}.{Gtk.get_minor_version()} / Adw {Adw.get_major_version()}.{Adw.get_minor_version()}')
+import numpy
+step(f'numpy {numpy.__version__}')
 from PIL import features
 assert features.check('webp'), 'Pillow without WebP'
+step('Pillow with WebP')
+import mpv
+step('python-mpv import')
+step('libmpv ' + str(mpv.MPV(vo='null', terminal='no').mpv_version))
 import neplayer.main, neplayer.ui.main_window
-print('GTK', Gtk.get_major_version(), Gtk.get_minor_version(), '| Adw', Adw.get_major_version(), Adw.get_minor_version(),
-      '|', mpv.MPV(vo='null', terminal='no').mpv_version)
+step('ENPlayer modules')
 PY
 
 du -sh "$OUT"
