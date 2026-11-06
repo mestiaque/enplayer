@@ -28,9 +28,17 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Install dependencies
+        # apt on the hosted runner occasionally hangs on a mirror: bound each try and retry.
         run: |
-          sudo apt-get update
-          sudo -E apt-get install -y --no-install-recommends python3-gi gir1.2-gtk-4.0 gir1.2-adw-1 libmpv1 ffmpeg python3-pil python3-numpy rsync
+          APT="-o Acquire::Retries=3 -o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30"
+          ok=0
+          for i in 1 2 3; do
+            timeout 300 sudo apt-get $APT update &&
+            timeout 600 sudo -E apt-get $APT install -y --no-install-recommends python3-gi gir1.2-gtk-4.0 gir1.2-adw-1 \
+              libmpv1 ffmpeg python3-pil python3-numpy rsync && { ok=1; break; }
+            echo "apt attempt $i failed, retrying…"; sleep 15
+          done
+          [ $ok = 1 ]
           pip3 install --user python-mpv
       - name: Unit tests
         run: python3 -m unittest discover -s tests -v
