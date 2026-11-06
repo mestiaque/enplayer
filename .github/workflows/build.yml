@@ -1,15 +1,19 @@
 # Builds ready-to-install packages for Windows and Ubuntu.
-# - Every push / manual run: installers are uploaded as workflow artifacts.
+# - Release tags, pull requests and manual runs: installers are uploaded as workflow artifacts.
 # - Pushing a tag like v1.4.1: a GitHub Release is created with the installers attached;
 #   installed copies of ENPlayer find it through their built-in update check.
 name: Build installers
 
 on:
   push:
-    branches: [main, master]
     tags: ['v*']
   pull_request:
   workflow_dispatch:
+
+# A newer run for the same tag/branch cancels the older one.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: write
