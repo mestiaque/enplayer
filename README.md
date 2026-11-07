@@ -185,7 +185,7 @@ freed on unrealize, so only one mpv preview core exists at any time.
 
 ## Updates
 
-Installed copies update themselves: ENPlayer checks GitHub for a newer release every time it starts (Settings → General
+Installed copies update themselves: ENPlayer checks GitHub for a newer release once a day (Settings → General
 → *Check for updates automatically*, or *Check now*). **Update now** downloads the installer, verifies its
 SHA-256 and installs it over the existing one, keeping your data. On Ubuntu the system asks for your
 password; on Windows the installer runs silently and ENPlayer restarts. No uninstall is needed.

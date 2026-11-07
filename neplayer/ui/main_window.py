@@ -153,8 +153,10 @@ class MainWindow(Adw.ApplicationWindow):
 
     # ================================================================ updates
     def schedule_update_check(self):
-        """Quietly look for a new release a few seconds after every start."""
+        """Quietly look for a new release a few seconds after start-up, at most once a day."""
         if not self.settings['check_updates']:
+            return
+        if time.time() - float(self.settings['last_update_check'] or 0) < 20 * 3600:
             return
         GLib.timeout_add_seconds(8, lambda: self.check_updates(manual=False) and False)
 
