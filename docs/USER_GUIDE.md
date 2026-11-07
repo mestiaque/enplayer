@@ -125,7 +125,7 @@ it on.
 
 ## Updates
 
-ENPlayer checks for a new version once a day. When one is available, click **Update now**. Your
+ENPlayer checks for a new version every time it starts. When one is available, click **Update now**. Your
 library and settings are kept. To check yourself, go to **Settings → General → Check now**.
 
 ## Removing ENPlayer
