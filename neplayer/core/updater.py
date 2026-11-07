@@ -88,6 +88,8 @@ def _request(url):
 
 def check(timeout=10, kind=None):
     """Latest release if it is newer than this version, else None. Raises UpdateError on failure."""
+    if os.environ.get('SNAP'):
+        return None  # the Snap Store updates this copy
     kind = install_kind() if kind is None else kind
     try:
         with urllib.request.urlopen(_request(API_LATEST), timeout=timeout) as r:

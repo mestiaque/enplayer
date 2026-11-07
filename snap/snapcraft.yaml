@@ -1,0 +1,64 @@
+name: enplayer
+title: ENPlayer
+summary: Video and music player with live hover previews
+description: |
+  ENPlayer scans your folders, builds a thumbnail library and plays real hover
+  previews straight from the original files. The built-in mpv player supports
+  resume, subtitles, audio tracks, speed control and full keyboard use.
+adopt-info: enplayer
+icon: neplayer/resources/icons/enplayer-512.png
+base: core22
+grade: stable
+confinement: strict
+license: MIT
+website: https://mestiaque.com
+source-code: https://github.com/mestiaque/enplayer
+issues: https://github.com/mestiaque/enplayer/issues
+
+apps:
+  enplayer:
+    command: bin/enplayer
+    desktop: usr/share/applications/enplayer.desktop
+    common-id: io.github.enplayer.ENPlayer
+    extensions: [gnome]
+    plugs:
+      - home
+      - removable-media
+      - network
+      - opengl
+      - audio-playback
+      - mount-observe
+    environment:
+      PYTHONPATH: $SNAP/lib/enplayer:$SNAP/usr/lib/python3/dist-packages
+
+parts:
+  enplayer:
+    plugin: nil
+    source: .
+    build-packages: [python3-pip]
+    stage-packages:
+      - python3
+      - python3-gi
+      - python3-pil
+      - python3-numpy
+      - libmpv1
+      - ffmpeg
+      - va-driver-all
+    override-pull: |
+      craftctl default
+      craftctl set version="$(sed -n "s/^VERSION = '\(.*\)'/\1/p" neplayer/config.py)"
+    override-build: |
+      craftctl default
+      D="$CRAFT_PART_INSTALL"
+      mkdir -p "$D/lib/enplayer" "$D/bin" "$D/usr/share/applications"
+      cp -r neplayer "$D/lib/enplayer/"
+      pip3 install --no-deps --target "$D/lib/enplayer" python-mpv
+      # ctypes.util.find_library cannot search the snap, so point python-mpv at libmpv.
+      sed -i "s|sofile = ctypes.util.find_library('mpv')|sofile = os.environ['SNAP'] + '/usr/lib/$CRAFT_ARCH_TRIPLET/libmpv.so.1'|" \
+        "$D/lib/enplayer/mpv.py"
+      grep -q "libmpv.so.1'" "$D/lib/enplayer/mpv.py"
+      sed -e 's/^Icon=.*/Icon=${SNAP}\/lib\/enplayer\/neplayer\/resources\/icons\/enplayer-512.png/' \
+          -e '/^TryExec=/d' \
+          packaging/io.github.enplayer.ENPlayer.desktop > "$D/usr/share/applications/enplayer.desktop"
+      printf '#!/bin/sh\nexec "$SNAP/usr/bin/python3" -m neplayer.main "$@"\n' > "$D/bin/enplayer"
+      chmod 755 "$D/bin/enplayer"

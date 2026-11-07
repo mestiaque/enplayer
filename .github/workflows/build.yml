@@ -8,6 +8,10 @@ on:
   push:
     tags: ['v*']
   pull_request:
+    # Documentation and screenshots never need a build.
+    paths-ignore:
+      - 'docs/**'
+      - '**.md'
   workflow_dispatch:
 
 # A newer run for the same tag/branch cancels the older one.
@@ -89,11 +93,25 @@ jobs:
           name: enplayer-windows-installer
           path: dist/ENPlayer-Setup-*.exe
 
+  snap:
+    name: Ubuntu snap
+    runs-on: ubuntu-22.04
+    timeout-minutes: 45
+    continue-on-error: true   # the snap must not block the .deb and Windows releases
+    steps:
+      - uses: actions/checkout@v4
+      - uses: snapcore/action-build@v1
+        id: snap
+      - uses: actions/upload-artifact@v4
+        with:
+          name: enplayer-snap
+          path: ${{ steps.snap.outputs.snap }}
+
   release:
     name: Publish release
     # Publish as soon as the Ubuntu package built; a failing Windows build must not block updates.
     if: ${{ !cancelled() && startsWith(github.ref, 'refs/tags/v') && needs.linux.result == 'success' }}
-    needs: [linux, windows]
+    needs: [linux, windows, snap]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/download-artifact@v4
@@ -105,5 +123,6 @@ jobs:
           files: |
             out/*.deb
             out/*.exe
+            out/*.snap
           fail_on_unmatched_files: false
           generate_release_notes: true

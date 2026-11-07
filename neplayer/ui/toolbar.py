@@ -93,6 +93,12 @@ class LibraryHeader(Gtk.Box):
         theme.append('Dark', "win.theme('dark')")
         theme.append('Light', "win.theme('light')")
         theme.append('Glass', "win.theme('glass')")
+        self.top_btn = Gtk.ToggleButton(icon_name='view-pin-symbolic', tooltip_text='Always on top')
+        self.top_btn.add_css_class('flat')
+        self.top_btn.add_css_class('hb-btn')
+        self.top_btn.set_action_name('win.always-on-top')
+        self.bar.pack_end(self.top_btn)
+
         self.theme_btn = Gtk.MenuButton(menu_model=theme, tooltip_text='Theme')
         self.theme_btn.add_css_class('flat')
         self.theme_btn.add_css_class('hb-btn')

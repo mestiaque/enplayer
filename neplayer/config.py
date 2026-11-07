@@ -25,6 +25,7 @@ DATA_DIR = Path(os.environ.get('NEPLAYER_DATA_DIR', _default_data))
 DEFAULT_CACHE_DIR = Path(os.environ.get('NEPLAYER_CACHE_DIR', _default_cache))
 DB_PATH = DATA_DIR / 'neplayer.db'
 LOG_PATH = DATA_DIR / 'neplayer.log'
+XWAYLAND_MARKER = DATA_DIR / 'use-xwayland'  # set while Always on top needs XWayland
 
 RESOURCES_DIR = Path(__file__).resolve().parent / 'resources'
 
@@ -64,6 +65,7 @@ DEFAULT_SETTINGS = {
     'dark_theme': True,  # legacy; migrated to 'theme'
     'grid_density': 'medium',  # small | medium | large
     'sidebar_visible': True,
+    'always_on_top': False,
     # playback
     'resume_playback': True,
     'default_volume': 100,  # mpv's volume curve is cubic: 50 is only ~12 % loudness

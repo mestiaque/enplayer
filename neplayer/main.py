@@ -24,6 +24,13 @@ def _setup_logging():
     sys.excepthook = hook
 
 
+def _prepare_always_on_top():
+    """Wayland cannot keep a window on top, so use XWayland once the option is on."""
+    from neplayer.config import XWAYLAND_MARKER
+    if sys.platform != 'win32' and XWAYLAND_MARKER.exists():
+        os.environ.setdefault('GDK_BACKEND', 'x11')
+
+
 def _check_deps():
     missing = []
     try:
@@ -71,6 +78,7 @@ def _prepare_windows():
 
 def main(argv=None):
     _prepare_windows()
+    _prepare_always_on_top()
     from neplayer.core import legacy
     carried = legacy.migrate()
     _setup_logging()

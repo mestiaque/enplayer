@@ -12,7 +12,8 @@ gi.require_version('Adw', '1')
 gi.require_version('Gdk', '4.0')
 from gi.repository import Adw, Gdk, Gio, GLib, Gtk
 
-from neplayer.config import APP_ID, APP_NAME, COPYRIGHT_YEAR, DEVELOPER, DEVELOPER_EMAIL, DEVELOPER_WEBSITE, VERSION
+from neplayer.config import (APP_ID, APP_NAME, COPYRIGHT_YEAR, DATA_DIR, DEVELOPER, DEVELOPER_EMAIL,
+                             DEVELOPER_WEBSITE, VERSION, XWAYLAND_MARKER)
 from neplayer.core.library import probe_single
 from neplayer.models.video import format_duration, format_size
 from neplayer.player import shortcuts
@@ -22,6 +23,7 @@ from neplayer.ui.home_view import HomeView
 from neplayer.ui.player_view import PlayerView
 from neplayer.ui.settings_view import SettingsDialog
 from neplayer.ui.mini_player import MiniPlayer
+from neplayer.ui.window_top import needs_xwayland, set_always_on_top
 from neplayer.ui.video_grid import count_label
 from neplayer.ui.sidebar import Sidebar
 from neplayer.ui.toolbar import LibraryHeader
@@ -522,6 +524,8 @@ class MainWindow(Adw.ApplicationWindow):
             self.sidebar_rev.set_reveal_child(vis)
             if self.header.sidebar_btn.get_active() != vis:
                 self.header.sidebar_btn.set_active(vis)
+        elif key == 'always_on_top':
+            self._apply_always_on_top(announce=True)
         elif key == 'accent':
             self.app.apply_theme()
         elif key == 'theme':
@@ -537,6 +541,18 @@ class MainWindow(Adw.ApplicationWindow):
             # Preview engine picks these up when re-created.
             self.previews.shutdown()
             self.previews = PreviewManager(self.settings)
+
+    def _apply_always_on_top(self, announce=False):
+        on = self.settings['always_on_top']
+        self.lookup_action('always-on-top').set_state(GLib.Variant('b', on))
+        if not on or needs_xwayland(self):
+            DATA_DIR.mkdir(parents=True, exist_ok=True)
+            XWAYLAND_MARKER.write_text('') if on else XWAYLAND_MARKER.unlink(missing_ok=True)
+        if self.get_surface() is not None and not needs_xwayland(self):
+            set_always_on_top(self, on)
+        elif announce and on:
+            self.toast('Restart ENPlayer to turn on Always on top', timeout=6)
+        return GLib.SOURCE_REMOVE
 
     # ============================================================== actions
     def _setup_actions(self):
@@ -560,6 +576,11 @@ class MainWindow(Adw.ApplicationWindow):
         theme = Gio.SimpleAction.new_stateful('theme', GLib.VariantType('s'), GLib.Variant('s', self.settings['theme']))
         theme.connect('activate', lambda a, v: (a.set_state(v), self.settings.set('theme', v.get_string())))
         self.add_action(theme)
+        top = Gio.SimpleAction.new_stateful('always-on-top', None,
+                                            GLib.Variant('b', self.settings['always_on_top']))
+        top.connect('activate', lambda a, _v: self.settings.set('always_on_top', not a.get_state().get_boolean()))
+        self.add_action(top)
+        self.connect('map', lambda *_: GLib.idle_add(self._apply_always_on_top))
         self.header.set_theme_icon(self.settings['theme'])
         add('toggle-sidebar', lambda: self.settings.set('sidebar_visible',
                                                        not self.settings['sidebar_visible']), ['F9'])

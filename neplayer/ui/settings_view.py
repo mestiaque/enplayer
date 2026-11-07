@@ -99,6 +99,7 @@ class SettingsView(Gtk.Box):
         self._switch(p, 'Watch folders for changes', 'Update the library when files are added, removed or renamed',
                      'auto_monitor')
         self._switch(p, 'Show sidebar', None, 'sidebar_visible')
+        self._switch(p, 'Always on top', 'Keep ENPlayer above other windows', 'always_on_top')
         self._switch(p, 'Check for updates automatically', 'Looks for a new ENPlayer release on GitHub once a day',
                      'check_updates')
         upd = Gtk.Button(label='Check now', valign=Gtk.Align.CENTER)
