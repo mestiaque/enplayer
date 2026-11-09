@@ -76,14 +76,14 @@ Library: Ctrl+O open file, Ctrl+N add folder, Ctrl+F search, F5 rescan, F9 sideb
 
 ## Ubuntu te install korar niyom
 
-Installer file: `dist/enplayer_1.4.6_all.deb`. Na thakle project folder e `bash packaging/build-deb.sh` chalan.
+Installer file: `dist/enplayer_1.4.7_all.deb`. Na thakle project folder e `bash packaging/build-deb.sh` chalan.
 
 ### Upay 1: Terminal die (shobcheye nirbhorjoggo)
 
 **Ctrl+Alt+T** chepe Terminal khulun, tarpor eta paste kore Enter chapun:
 
 ```bash
-sudo apt install ~/Videos/vplayer/dist/enplayer_1.4.6_all.deb
+sudo apt install ~/Videos/vplayer/dist/enplayer_1.4.7_all.deb
 ```
 
 Password chaile apnar login password din. Type korar shomoy kichu dekhabe na, eta swabhabik.
@@ -91,7 +91,7 @@ Password chaile apnar login password din. Type korar shomoy kichu dekhabe na, et
 ### Upay 2: Mouse die
 
 1. Files app e `Videos → vplayer → dist` folder e jan.
-2. `enplayer_1.4.6_all.deb` e **right-click** kore **Open With Other Application → Software Install** select korun.
+2. `enplayer_1.4.7_all.deb` e **right-click** kore **Open With Other Application → Software Install** select korun.
 3. **Install** chepe password din.
 
 > Ubuntu 22.04 er Software app majhe majhe `.deb` file thik moto khulte pare na. Tokhon Upay 1 use korun.
@@ -132,8 +132,8 @@ On Ubuntu 24.04 the package is `libmpv2` instead of `libmpv1`.
 ./install.sh                   # per-user install: app-grid launcher + `enplayer` command
 ./uninstall.sh [--purge]       # remove (--purge also deletes the library DB and thumbnails)
 
-bash packaging/build-deb.sh    # build dist/enplayer_1.4.6_all.deb
-sudo apt install ./dist/enplayer_1.4.6_all.deb
+bash packaging/build-deb.sh    # build dist/enplayer_1.4.7_all.deb
+sudo apt install ./dist/enplayer_1.4.7_all.deb
 sudo apt remove enplayer
 ```
 

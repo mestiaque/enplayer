@@ -308,18 +308,22 @@ class MusicTests(unittest.TestCase):
         db.save_position(v['id'], 1.5, False)
         self.assertEqual(db.query_videos('continue'), [])  # songs never appear in Continue Watching
         out = thumbnail.generate(str(self.song), 3.0, self.dir / 't.webp')
-        self.assertTrue(Path(out).stat().st_size > 0)
+        # no embedded cover: a marker instead of a picture; the card draws a themed music icon
+        self.assertTrue(out.endswith(thumbnail.NO_ART_SUFFIX) and Path(out).exists())
         cover, bg = thumbnail.cover_art(str(self.song), 1, self.dir / 'cache', 'Demo')
         self.assertTrue(Path(cover).exists() and Path(bg).exists())
 
-    def test_placeholder_is_the_app_icon(self):
-        self.assertTrue(thumbnail.ICON_PNG.exists())
-        from PIL import Image
+    def test_placeholder_is_a_music_note(self):
         img = thumbnail.placeholder_art(size=200)
         self.assertEqual(img.size, (200, 200))
-        # the icon's white "EN" letters are drawn in the middle of the dark backdrop
-        self.assertGreater(img.crop((60, 60, 140, 140)).convert('L').getextrema()[1], 230)
-        self.assertLess(img.getpixel((2, 2))[1], 60)
+        # a white note in the middle of a dark backdrop
+        self.assertGreater(img.crop((70, 70, 130, 130)).convert('L').getextrema()[1], 230)
+        self.assertLess(img.getpixel((198, 198))[1], 90)
+
+    def test_song_thumb_path_changes_with_art_version(self):
+        a = thumbnail.thumb_path('/c', '/m/x.mp3', 1)
+        self.assertNotEqual(a, thumbnail.thumb_path('/c', '/m/x.mp4', 1))
+        self.assertEqual(thumbnail.no_art_path(a).suffix, thumbnail.NO_ART_SUFFIX)
 
     def test_song_cards_are_remade_once_for_the_new_placeholder(self):
         path = self.dir / 'lib.db'
@@ -338,6 +342,46 @@ class MusicTests(unittest.TestCase):
         db.set_thumbnail(song['id'], '/tmp/new.webp')
         db = Database(path)                                  # and only once
         self.assertEqual(db.get_video(song['id'])['thumbnail_path'], '/tmp/new.webp')
+
+
+class EqualizerTests(unittest.TestCase):
+    """Settings → mpv filter chain, presets and the response curve."""
+
+    def setUp(self):
+        from neplayer.player import equalizer as eq
+        self.eq = eq
+        self.s = dict(eq.DEFAULTS, eq_gains=list(eq.FLAT))
+
+    def test_flat_or_off_means_no_processing(self):
+        self.assertEqual(self.eq.build_af(self.s), '')
+        self.s.update(eq_gains=list(self.eq.PRESETS['Rock']), eq_enabled=False)
+        self.assertEqual(self.eq.build_af(self.s), '')
+
+    def test_chain_has_changed_bands_extras_and_limiter(self):
+        self.s.update(eq_gains=[0, 0, 0, 0, 0, 3, 0, 0, 0, -2], eq_preamp=-4.0, eq_crossfeed=True)
+        af = self.eq.build_af(self.s).split(',')
+        self.assertEqual(af[0], '@eqpre:lavfi-volume=volume=-4dB')
+        self.assertIn('@eq5:lavfi-equalizer=f=1000:t=o:w=1:g=3', af)
+        self.assertIn('@eq9:lavfi-equalizer=f=16000:t=o:w=1:g=-2', af)
+        self.assertEqual(sum(f.startswith('@eq') and 'equalizer' in f for f in af), 2)  # flat bands skipped
+        self.assertTrue(any('crossfeed' in f for f in af))
+        self.assertIn('alimiter', af[-1])
+
+    def test_gains_are_cleaned_and_presets_matched(self):
+        self.assertEqual(self.eq.clean_gains([99, -99, 'x', 1.26]), [12, -12, 0, 1.5] + [0.0] * 6)
+        self.assertEqual(self.eq.preset_for(self.eq.PRESETS['Vocal']), 'Vocal')
+        self.assertEqual(self.eq.preset_for([1] * 10, {'Mine': [1] * 10}), 'Mine')
+        self.assertEqual(self.eq.preset_for([1, 2] + [0] * 8), self.eq.CUSTOM)
+        for name, gains in self.eq.PRESETS.items():
+            self.assertEqual(len(gains), len(self.eq.BANDS), name)
+
+    def test_response_curve_peaks_at_the_band(self):
+        gains = [0] * 10
+        gains[5] = 6
+        r = self.eq.response_db(gains, -2, [1000, 30, 15000])
+        self.assertAlmostEqual(r[0], 4.0, delta=0.05)      # +6 band, -2 preamp
+        self.assertAlmostEqual(r[1], -2.0, delta=0.05)     # far away: preamp only
+        self.assertAlmostEqual(r[2], -2.0, delta=0.1)
 
 
 class PlaylistTests(unittest.TestCase):
