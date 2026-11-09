@@ -175,8 +175,7 @@ def install(path, kind=None):
         flags = getattr(subprocess, 'DETACHED_PROCESS', 0) | getattr(subprocess, 'CREATE_NEW_PROCESS_GROUP', 0)
         subprocess.Popen(['cmd', '/c', cmd], creationflags=flags, close_fds=True)
         return
-    raise UpdateError('This copy of ENPlayer was not installed from a package; download the new version '
-                      'from ' + RELEASES_PAGE)
+    raise UpdateError('This copy of ENPlayer runs from the source code and cannot update itself')
 
 
 def restart():

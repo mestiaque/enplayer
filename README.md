@@ -74,16 +74,76 @@ Its sister app is **ENViewer**, the image viewer (`~/Videos/imview`).
 
 Library: Ctrl+O open file, Ctrl+N add folder, Ctrl+F search, F5 rescan, F9 sidebar, Ctrl+? all shortcuts.
 
+## Install and uninstall
+
+ENPlayer is published as GitHub releases. The commands below always fetch the **latest** version, so
+they work on any computer with an internet connection. Installed copies then update themselves
+(Settings → General → *Check for updates*).
+
+### Ubuntu / Debian (22.04 or newer), .deb (recommended)
+
+Open a terminal (**Ctrl+Alt+T**) and paste:
+
+```bash
+sudo apt update && sudo apt install -y curl
+URL=$(curl -fsSL https://api.github.com/repos/mestiaque/enplayer/releases/latest | grep -o 'https://[^"]*_all\.deb' | head -1)
+curl -fL -o /tmp/enplayer.deb "$URL"
+sudo apt install -y /tmp/enplayer.deb
+```
+
+`apt` also installs what ENPlayer needs. Start it from the app grid (search “ENPlayer”) or run `enplayer`.
+Enter your login password when asked (nothing is shown while you type; that is normal).
+Running the same commands again later upgrades to the newest version.
+
+### Windows 10 / 11, installer
+
+Open **PowerShell** (Start → type “PowerShell”) and paste:
+
+```powershell
+$r = Invoke-RestMethod https://api.github.com/repos/mestiaque/enplayer/releases/latest
+$a = $r.assets | Where-Object name -like 'ENPlayer-Setup-*.exe' | Select-Object -First 1
+Invoke-WebRequest $a.browser_download_url -OutFile "$env:TEMP\$($a.name)"
+Start-Process "$env:TEMP\$($a.name)" -ArgumentList '/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART' -Wait
+```
+
+No administrator rights are needed. ENPlayer appears in the Start menu.
+
+### Uninstall
+
+**Ubuntu / Debian:**
+
+```bash
+sudo apt remove -y enplayer
+```
+
+**Windows (installer):** Settings → Apps → ENPlayer → Uninstall, or in PowerShell:
+
+```powershell
+$u = Get-ItemProperty 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\*','HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\*' -ErrorAction SilentlyContinue |
+  Where-Object DisplayName -like 'ENPlayer*' | Select-Object -First 1
+Start-Process $u.UninstallString.Trim('"') -ArgumentList '/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART' -Wait
+```
+
+**Also remove settings and data** (optional). Your videos and music are never touched; only the library database, watch history, settings and thumbnails are removed.
+
+```bash
+rm -rf ~/.local/share/neplayer ~/.cache/neplayer                     # Linux
+```
+
+```powershell
+Remove-Item -Recurse -Force "$env:LOCALAPPDATA\NEPLAYER" -ErrorAction SilentlyContinue   # Windows
+```
+
 ## Ubuntu te install korar niyom
 
-Installer file: `dist/enplayer_1.4.7_all.deb`. Na thakle project folder e `bash packaging/build-deb.sh` chalan.
+Installer file: `dist/enplayer_1.4.8_all.deb`. Na thakle project folder e `bash packaging/build-deb.sh` chalan.
 
 ### Upay 1: Terminal die (shobcheye nirbhorjoggo)
 
 **Ctrl+Alt+T** chepe Terminal khulun, tarpor eta paste kore Enter chapun:
 
 ```bash
-sudo apt install ~/Videos/vplayer/dist/enplayer_1.4.7_all.deb
+sudo apt install ~/Videos/vplayer/dist/enplayer_1.4.8_all.deb
 ```
 
 Password chaile apnar login password din. Type korar shomoy kichu dekhabe na, eta swabhabik.
@@ -91,7 +151,7 @@ Password chaile apnar login password din. Type korar shomoy kichu dekhabe na, et
 ### Upay 2: Mouse die
 
 1. Files app e `Videos → vplayer → dist` folder e jan.
-2. `enplayer_1.4.7_all.deb` e **right-click** kore **Open With Other Application → Software Install** select korun.
+2. `enplayer_1.4.8_all.deb` e **right-click** kore **Open With Other Application → Software Install** select korun.
 3. **Install** chepe password din.
 
 > Ubuntu 22.04 er Software app majhe majhe `.deb` file thik moto khulte pare na. Tokhon Upay 1 use korun.
@@ -132,8 +192,8 @@ On Ubuntu 24.04 the package is `libmpv2` instead of `libmpv1`.
 ./install.sh                   # per-user install: app-grid launcher + `enplayer` command
 ./uninstall.sh [--purge]       # remove (--purge also deletes the library DB and thumbnails)
 
-bash packaging/build-deb.sh    # build dist/enplayer_1.4.7_all.deb
-sudo apt install ./dist/enplayer_1.4.7_all.deb
+bash packaging/build-deb.sh    # build dist/enplayer_1.4.8_all.deb
+sudo apt install ./dist/enplayer_1.4.8_all.deb
 sudo apt remove enplayer
 ```
 

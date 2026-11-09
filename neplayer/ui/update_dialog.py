@@ -56,18 +56,19 @@ class UpdateDialog(Adw.Window):
         buttons = Gtk.Box(spacing=8, halign=Gtk.Align.END)
         self.later = Gtk.Button(label='Later')
         self.later.connect('clicked', lambda *_: self._on_later())
-        self.go = Gtk.Button(label='Update now' if update.installable else 'Open download page')
+        self.go = Gtk.Button(label='Update now' if update.installable else 'OK')
         self.go.add_css_class('suggested-action')
         self._go_id = self.go.connect('clicked', lambda *_: self._on_go())
-        buttons.append(self.later)
+        if update.installable:
+            buttons.append(self.later)
         buttons.append(self.go)
         box.append(buttons)
         if update.installable:
             self.status.set_label('The update downloads and installs in place; your library and settings are kept.'
                                   + (' Ubuntu asks for your password.' if self.kind == 'deb' else ''))
         else:
-            self.status.set_label('This copy was not installed from a package, so it cannot update itself. '
-                                  'Download the new version from the release page.')
+            self.status.set_label('This copy runs from the source code, so it cannot update itself. '
+                                  'Copies installed from the ENPlayer .deb or Windows installer update in place.')
         self.set_content(box)
         self.connect('close-request', self._on_close_request)
 
@@ -83,7 +84,6 @@ class UpdateDialog(Adw.Window):
 
     def _on_go(self):
         if not self.update.installable:
-            Gtk.show_uri(self.parent_win, self.update.page, 0)
             self.close()
             return
         self._busy = True
