@@ -11,7 +11,7 @@ DEVELOPER = 'M. Estiaque Ahmed Khan'
 DEVELOPER_EMAIL = 'info@mestiaque.com'
 DEVELOPER_WEBSITE = 'https://mestiaque.com'
 COPYRIGHT_YEAR = '2026'
-VERSION = '1.4.8'
+VERSION = '1.4.9'
 
 if IS_WINDOWS:
     _local = Path(os.environ.get('LOCALAPPDATA', Path.home() / 'AppData' / 'Local'))
