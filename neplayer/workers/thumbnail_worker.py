@@ -89,6 +89,8 @@ class ThumbnailWorker:
                 out = thumbnail.thumb_path(self._get_cache_dir(), path, mtime)
                 if out.exists() and out.stat().st_size > 0:
                     result = str(out)
+                elif thumbnail.no_art_path(out).exists():
+                    result = str(thumbnail.no_art_path(out))
                 else:
                     result = thumbnail.generate(path, dur, out)
                 self._db.set_thumbnail(vid, result)

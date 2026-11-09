@@ -196,8 +196,18 @@ class MainWindow(Adw.ApplicationWindow):
         up = getattr(self, '_pending_update', None)
         if up is None:
             return
+        dlg = getattr(self, '_update_dlg', None)
+        if dlg is not None and dlg.get_visible():
+            dlg.present()           # already open: bring it forward instead of stacking a second one
+            return
         from neplayer.ui.update_dialog import UpdateDialog
-        UpdateDialog(self, up, Path(self.settings['cache_dir'])).present()
+        # Open it above whatever modal window is up (e.g. Settings → "Check now"); parenting it
+        # to the main window would put it *behind* Settings, leaving two modals that block the app.
+        self._update_dlg = UpdateDialog(self, up, Path(self.settings['cache_dir']))
+        sd = self._settings_dialog
+        if sd is not None and sd.get_visible():
+            self._update_dlg.set_transient_for(sd)
+        self._update_dlg.present()
 
     def show_settings(self, section=None):
         if self._settings_dialog is None:

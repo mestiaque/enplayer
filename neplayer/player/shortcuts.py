@@ -35,6 +35,7 @@ PLAYER_KEYS = [
     ((K.KEY_i, K.KEY_I), 0, 'stats', None),
     ((K.KEY_s, K.KEY_S), K.ModifierType.CONTROL_MASK, 'screenshot', None),
     ((K.KEY_v, K.KEY_V), 0, 'toggle-sub-visibility', None),
+    ((K.KEY_e, K.KEY_E), 0, 'equalizer', None),
 ]
 
 _MODS = K.ModifierType.SHIFT_MASK | K.ModifierType.CONTROL_MASK | K.ModifierType.ALT_MASK
@@ -59,7 +60,7 @@ HELP = [
                   ('N / P', 'Next / previous video')]),
     ('Music', [('V', 'Visualizer on / off'), (', / .', 'Previous / next visualizer preset'),
                ('R', 'Random visualizer preset'), ('F', 'Fullscreen visualizer')]),
-    ('Audio & Subtitles', [('↑ / ↓', 'Volume'), ('M', 'Mute'), ('A', 'Next audio track'),
+    ('Audio & Subtitles', [('↑ / ↓', 'Volume'), ('M', 'Mute'), ('E', 'Equalizer'), ('A', 'Next audio track'),
                            ('S', 'Next subtitle'), ('V', 'Show / hide subtitles')]),
     ('View', [('F / Double-click', 'Fullscreen'), ('Esc', 'Exit fullscreen / close player'),
               ('I', 'Statistics'), ('Ctrl + S', 'Screenshot')]),

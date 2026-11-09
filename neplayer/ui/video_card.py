@@ -9,6 +9,7 @@ gi.require_version('Gtk', '4.0')
 gi.require_version('Gdk', '4.0')
 from gi.repository import Gdk, Gio, GLib, Gtk
 
+from neplayer.core.thumbnail import NO_ART_SUFFIX
 from neplayer.models.video import (file_format, format_duration, format_size,
                                     resolution_label)
 
@@ -76,6 +77,17 @@ class VideoCard(Gtk.Box):
         stack = Gtk.Stack(transition_type=Gtk.StackTransitionType.CROSSFADE, transition_duration=180)
         stack.add_named(self.placeholder, 'placeholder')
         stack.add_named(self.picture, 'picture')
+        # Songs without cover art: a music icon styled by the active theme.
+        song_icon = Gtk.Image.new_from_icon_name('audio-x-generic-symbolic')
+        song_icon.set_pixel_size(30)
+        song_icon.add_css_class('song-art-icon')
+        song_icon.set_halign(Gtk.Align.CENTER)
+        song_icon.set_valign(Gtk.Align.CENTER)
+        song_art = Gtk.Box()
+        song_art.add_css_class('song-art')
+        song_art.append(song_icon)
+        song_icon.set_hexpand(True)
+        stack.add_named(song_art, 'song-art')
         self.thumb_stack = stack
         self.overlay.set_child(stack)
 
@@ -223,6 +235,9 @@ class VideoCard(Gtk.Box):
         if path and path == self._thumb_path and self.thumb_stack.get_visible_child_name() == 'picture':
             return
         self._thumb_path = path
+        if path and path.endswith(NO_ART_SUFFIX):
+            self.thumb_stack.set_visible_child_name('song-art')
+            return
         if not path:
             self.thumb_stack.set_visible_child_name('placeholder')
             self.ctx.library.request_thumbnail(v, visible=True)

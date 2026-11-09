@@ -140,10 +140,10 @@ class Database:
             self.conn.execute(f'PRAGMA user_version={SCHEMA_VERSION}')
             self._refresh_audio_art()
 
-    ART_VERSION = 'enplayer-icon-1'
+    ART_VERSION = 'themed-note-1'
 
     def _refresh_audio_art(self):
-        """Songs without cover art now use the ENPlayer icon as their placeholder: re-make their
+        """When the song placeholder art changes, re-make the audio
         grid cards once (only audio rows; video thumbnails are untouched)."""
         c = self.conn
         row = c.execute("SELECT value FROM settings WHERE key='audio_art_version'").fetchone()

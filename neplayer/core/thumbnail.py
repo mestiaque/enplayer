@@ -15,8 +15,22 @@ class ThumbnailError(Exception):
     pass
 
 
+AUDIO_ART_VERSION = 'themed-note-1'  # bump to re-make every song card (also Database.ART_VERSION)
+
+
+def no_art_path(thumb):
+    """Marker stored instead of a picture for songs without cover art."""
+    return Path(thumb).with_suffix(NO_ART_SUFFIX)
+
+
+NO_ART_SUFFIX = '.noart'
+
+
 def thumb_path(cache_dir, file_path, mtime):
-    key = hashlib.sha1(f'{file_path}\0{mtime}'.encode()).hexdigest()
+    key = f'{file_path}\0{mtime}'
+    if Path(file_path).suffix.lower().lstrip('.') in AUDIO_EXTENSIONS:
+        key += f'\0{AUDIO_ART_VERSION}'
+    key = hashlib.sha1(key.encode()).hexdigest()
     return Path(cache_dir) / 'thumbnails' / key[:2] / f'{key}.webp'
 
 
@@ -109,35 +123,71 @@ def extract_cover(file_path, out_path, size=600, timeout=30):
     return r.returncode == 0 and out_path.exists() and out_path.stat().st_size > 0
 
 
-ICON_PNG = Path(__file__).resolve().parent.parent / 'resources' / 'icons' / 'enplayer-512.png'
+def _music_glyph(side, rgba=(255, 255, 255, 240)):
+    """A clean beamed music note (24-unit grid, lucide-style) drawn supersampled → RGBA side×side."""
+    from PIL import Image, ImageDraw
+    ss = 4
+    S = side * ss
+    u = S / 24
+    im = Image.new('RGBA', (S, S), (0, 0, 0, 0))
+    d = ImageDraw.Draw(im)
+    w = 2.0 * u
+    for x, y0, y1 in ((9, 18, 5), (21, 16, 3)):                       # stems
+        d.rectangle([x * u - w / 2, y1 * u, x * u + w / 2, y0 * u], fill=rgba)
+    d.polygon([(9 * u - w / 2, 5 * u), (21 * u + w / 2, 3 * u - .08 * u),   # slanted beam
+               (21 * u + w / 2, 6.2 * u), (9 * u - w / 2, 8.2 * u)], fill=rgba)
+    for cx, cy in ((6, 18), (18, 16)):                                # note heads
+        d.ellipse([(cx - 3.3) * u, (cy - 3.3) * u, (cx + 3.3) * u, (cy + 3.3) * u], fill=rgba)
+    return im.resize((side, side), Image.LANCZOS)
+
+
+def _glass_art(W, H, opaque=False):
+    """Frosted-glass tile with a centred music note. Translucent (RGBA) so the app's background
+    shows through on grid cards; opaque=True flattens it onto a dark violet base (now-playing art)."""
+    from PIL import Image, ImageDraw, ImageFilter
+    import numpy as np
+    y = np.linspace(0, 1, H)[:, None, None]
+    x = np.linspace(0, 1, W)[None, :, None]
+    top, bot = np.array([120, 110, 200, 82], float), np.array([60, 52, 120, 110], float)
+    px = top + (bot - top) * y + np.zeros((1, W, 1))
+    # soft diagonal sheen across the upper-left, like light on glass
+    sheen = np.clip(1 - np.abs((x + y * .6) - .35) / .22, 0, 1) * (1 - y) * 22
+    px[..., :3] += sheen
+    px[..., 3] += sheen[..., 0]
+    img = Image.fromarray(np.clip(px, 0, 255).astype(np.uint8), 'RGBA')
+    if opaque:
+        base = Image.new('RGBA', (W, H), (24, 20, 44, 255))
+        base.alpha_composite(img)
+        img = base
+    m = min(W, H)
+    # glass disc behind the note, with a faint rim
+    r = int(m * .30)
+    cx, cy = W // 2, H // 2
+    glow = Image.new('RGBA', (W, H), (0, 0, 0, 0))
+    ImageDraw.Draw(glow).ellipse([cx - r, cy - r, cx + r, cy + r], fill=(167, 139, 250, 70))
+    img.alpha_composite(glow.filter(ImageFilter.GaussianBlur(m / 9)))
+    disc = Image.new('RGBA', (W, H), (0, 0, 0, 0))
+    dd = ImageDraw.Draw(disc)
+    dd.ellipse([cx - r, cy - r, cx + r, cy + r], fill=(255, 255, 255, 26),
+               outline=(255, 255, 255, 56), width=max(1, m // 180))
+    img.alpha_composite(disc)
+    side = int(m * .30)
+    note = _music_glyph(side)
+    shadow = Image.new('RGBA', (W, H), (0, 0, 0, 0))
+    shadow.paste((0, 0, 0, 90), (cx - side // 2 + 1, cy - side // 2 + max(2, m // 90)), note)
+    img.alpha_composite(shadow.filter(ImageFilter.GaussianBlur(max(2, m // 60))))
+    img.alpha_composite(note, (cx - side // 2 - int(side * .02), cy - side // 2))
+    return img
 
 
 def placeholder_art(size=600):
-    """Artwork for songs without an embedded cover: the ENPlayer icon on a deep violet backdrop."""
-    from PIL import Image, ImageDraw, ImageFilter
-    # soft diagonal gradient in the icon's colours (violet → indigo)
-    import numpy as np
-    t = (np.add.outer(np.arange(size), np.arange(size)) / max(2 * size - 2, 1))[..., None]
-    c1, c2 = np.array([46, 16, 101], float), np.array([30, 27, 75], float)
-    img = Image.fromarray((c1 + (c2 - c1) * t).astype(np.uint8), 'RGB')
-    try:
-        with Image.open(ICON_PNG) as icon:
-            icon = icon.convert('RGBA')
-            side = int(size * 0.62)
-            icon = icon.resize((side, side), Image.LANCZOS)
-            glow = Image.new('RGBA', (size, size), (0, 0, 0, 0))
-            ImageDraw.Draw(glow).ellipse([size * .2, size * .2, size * .8, size * .8], fill=(109, 40, 217, 140))
-            img = img.convert('RGBA')
-            img.alpha_composite(glow.filter(ImageFilter.GaussianBlur(size / 10)))
-            img.alpha_composite(icon, ((size - side) // 2, (size - side) // 2))
-    except OSError:
-        pass
-    return img.convert('RGB')
+    """Square artwork for songs without an embedded cover (now-playing view, visualizer)."""
+    return _glass_art(size, size, opaque=True).convert('RGB')
 
 
 def cover_art(file_path, mtime, cache_dir, seed=''):
     """(cover_path, blurred_background_path) cached on disk; falls back to generated art."""
-    key = hashlib.sha1(f'{file_path}\0{mtime}\0icon-placeholder'.encode()).hexdigest()
+    key = hashlib.sha1(f'{file_path}\0{mtime}\0glass-note-1'.encode()).hexdigest()
     base = Path(cache_dir) / 'covers' / key[:2]
     cover, blur = base / f'{key}.jpg', base / f'{key}-bg.jpg'
     if cover.exists() and blur.exists():
@@ -159,11 +209,13 @@ def audio_thumbnail(file_path, out_path, timeout=60):
     out_path.parent.mkdir(parents=True, exist_ok=True)
     tmp = out_path.with_suffix('.cover.jpg')
     try:
-        if extract_cover(file_path, tmp, size=512, timeout=timeout):
-            art = Image.open(tmp).convert('RGB')
-        else:
-            art = placeholder_art(size=512)
         W, H = THUMB_WIDTH, THUMB_HEIGHT
+        if not extract_cover(file_path, tmp, size=512, timeout=timeout):
+            # No embedded art: the card draws a themed music icon itself (see VideoCard).
+            marker = no_art_path(out_path)
+            marker.write_bytes(b'')
+            return str(marker)
+        art = Image.open(tmp).convert('RGB')
         scale = max(W / art.width, H / art.height)
         bg = art.resize((int(art.width * scale) + 1, int(art.height * scale) + 1))
         bg = bg.crop(((bg.width - W) // 2, (bg.height - H) // 2, (bg.width - W) // 2 + W, (bg.height - H) // 2 + H))

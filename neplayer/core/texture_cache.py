@@ -49,8 +49,9 @@ class TextureCache:
         try:
             from PIL import Image
             with Image.open(path) as im:
-                im = im.convert('RGB')
-                data = (im.width, im.height, im.tobytes())
+                alpha = im.mode in ('RGBA', 'LA', 'PA') or 'transparency' in im.info
+                im = im.convert('RGBA' if alpha else 'RGB')
+                data = (im.width, im.height, im.tobytes(), alpha)
         except Exception as e:
             log.debug('Cannot decode %s: %s', path, e)
         GLib.idle_add(self._finish, path, data)
@@ -58,8 +59,9 @@ class TextureCache:
     def _finish(self, path, data):
         tex = None
         if data is not None:
-            w, h, raw = data
-            tex = Gdk.MemoryTexture.new(w, h, Gdk.MemoryFormat.R8G8B8, GLib.Bytes.new(raw), w * 3)
+            w, h, raw, alpha = data
+            fmt, bpp = (Gdk.MemoryFormat.R8G8B8A8, 4) if alpha else (Gdk.MemoryFormat.R8G8B8, 3)
+            tex = Gdk.MemoryTexture.new(w, h, fmt, GLib.Bytes.new(raw), w * bpp)
             self._cache[path] = tex
             while len(self._cache) > self._cap:
                 self._cache.popitem(last=False)

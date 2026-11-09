@@ -122,6 +122,8 @@ class SettingsView(Gtk.Box):
         p = self._pages['Playback']
         self._switch(p, 'Resume playback', 'Continue where you left off', 'resume_playback')
         self._switch(p, 'Play next video automatically', None, 'autoplay_next')
+        self._switch(p, 'Equalizer', 'Presets, bands and sound options: press E or the EQ button in the player',
+                     'eq_enabled')
         self._spin(p, 'Default volume', 'Volume when ENPlayer starts (100 = the file\u2019s own loudness)',
                    'default_volume', 0, 130, 5)
         self._dropdown(p, 'Default speed', None, 'playback_speed',

@@ -11,7 +11,7 @@ DEVELOPER = 'M. Estiaque Ahmed Khan'
 DEVELOPER_EMAIL = 'info@mestiaque.com'
 DEVELOPER_WEBSITE = 'https://mestiaque.com'
 COPYRIGHT_YEAR = '2026'
-VERSION = '1.4.5'
+VERSION = '1.4.6'
 
 if IS_WINDOWS:
     _local = Path(os.environ.get('LOCALAPPDATA', Path.home() / 'AppData' / 'Local'))
@@ -95,5 +95,12 @@ VIZ_DEFAULTS = {
     'viz_background': 'cover', 'viz_fft': 2048, 'viz_quality': 'high', 'viz_reduced_motion': False,
 }
 DEFAULT_SETTINGS.update(VIZ_DEFAULTS)
+
+# Equalizer (see neplayer/player/equalizer.py for the presets and filter chain).
+EQ_DEFAULTS = {
+    'eq_enabled': True, 'eq_gains': [0.0] * 10, 'eq_preamp': 0.0, 'eq_preset': 'Flat',
+    'eq_user_presets': {}, 'eq_leveling': False, 'eq_widen': False, 'eq_crossfeed': False,
+}
+DEFAULT_SETTINGS.update(EQ_DEFAULTS)
 
 DENSITY_WIDTH = {'small': 200, 'medium': 260, 'large': 340}

@@ -14,6 +14,8 @@ import mpv
 
 from neplayer.models.video import format_duration, resolution_label
 from neplayer.player import shortcuts
+from neplayer.player.equalizer import EqualizerController
+from neplayer.ui.equalizer_panel import EqualizerPanel
 from neplayer.player.mpv_widget import MpvGLArea
 from neplayer.player.playback_manager import PlaybackManager
 from neplayer.config import AUDIO_EXTENSIONS
@@ -79,6 +81,7 @@ class PlayerView(Gtk.Overlay):
             sub_shadow_offset='1', sub_color='#FFFFFFFF', sub_border_color='#E6000000',
         )
         self.mpv = self.area.mpv
+        self.eq = EqualizerController(self.mpv, self.settings)
         self.set_child(self.area)
         self.apply_theme()
         self._is_audio = False
@@ -235,6 +238,20 @@ class PlayerView(Gtk.Overlay):
         self.status_lbl = Gtk.Label(hexpand=True, xalign=0)
         self.status_lbl.add_css_class('player-status')
         row.append(self.status_lbl)
+
+        self.eq_btn = Gtk.MenuButton(icon_name='nep-equalizer-symbolic', tooltip_text='Equalizer (E)')
+        self.eq_btn.add_css_class('flat')
+        self.eq_btn.add_css_class('player-btn')
+        eq_panel = EqualizerPanel(self.settings)
+        # keep the controls up while the panel is open, resume auto-hide after
+        eq_panel.connect('show', lambda *_: self.show_controls(force=True))
+        eq_panel.connect('closed', lambda *_: self.show_controls())
+        self.eq_btn.set_popover(eq_panel)
+        self.eq_btn.set_create_popup_func(self._fit_popover)  # runs before every popup
+        self._update_eq_btn()
+        self.settings.connect('changed', lambda _s, k: k in ('eq_enabled', 'eq_gains', 'eq_preamp', 'eq_leveling',
+                                                            'eq_widen', 'eq_crossfeed') and self._update_eq_btn())
+        row.append(self.eq_btn)
 
         self.speed_btn = Gtk.MenuButton(label='1×', tooltip_text='Playback speed')
         self.speed_btn.add_css_class('flat')
@@ -435,7 +452,7 @@ class PlayerView(Gtk.Overlay):
 
         def still_inactive():
             if not win.is_active():
-                for b in (self.viz_menu, self.speed_btn, self.sub_btn, self.audio_btn):
+                for b in (self.viz_menu, self.eq_btn, self.speed_btn, self.sub_btn, self.audio_btn):
                     if b.get_popover() is not None and b.get_popover().get_visible():
                         b.popdown()
             return False
@@ -671,8 +688,37 @@ class PlayerView(Gtk.Overlay):
         self.emit('close-requested')
 
     def shutdown(self):
+        self.eq.shutdown()
         self.stop()
         self.area.shutdown()
+
+    @staticmethod
+    def _fit_popover(btn, margin=18):
+        """Shift a wide popover sideways so it stays inside the window (the EQ panel is wider
+        than the space to the right of its button)."""
+        pop, win = btn.get_popover(), btn.get_root()
+        if pop is None or win is None:
+            return
+        from gi.repository import Graphene
+        ok, pt = btn.compute_point(win, Graphene.Point())
+        if not ok:
+            return
+        pw = pop.measure(Gtk.Orientation.HORIZONTAL, -1)[1]
+        center = pt.x + btn.get_width() / 2
+        left, right = center - pw / 2, center + pw / 2
+        dx = 0
+        if right > win.get_width() - margin:
+            dx = win.get_width() - margin - right
+        if left + dx < margin:
+            dx = margin - left
+        pop.set_offset(int(dx), 0)
+
+    def _update_eq_btn(self):
+        """Accent-tint the EQ button while it is actually changing the sound."""
+        if self.eq.active:
+            self.eq_btn.add_css_class('eq-on')
+        else:
+            self.eq_btn.remove_css_class('eq-on')
 
     def _save_position(self):
         v = self.manager.current
@@ -1098,6 +1144,9 @@ class PlayerView(Gtk.Overlay):
             vis = not self.mpv['sub-visibility']
             self.mpv['sub-visibility'] = vis
             self.show_osd('Subtitles shown' if vis else 'Subtitles hidden')
+        elif action == 'equalizer':
+            self.show_controls(force=True)
+            self.eq_btn.popup()
 
     # ============================================================ chrome
     def show_osd(self, text, ms=1300):

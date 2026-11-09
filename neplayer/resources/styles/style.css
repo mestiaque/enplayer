@@ -92,6 +92,17 @@ gridview.video-grid > child:hover, gridview.video-grid > child:focus { backgroun
 }
 .thumb-placeholder { color: alpha(@ff_text_dim, 0.4); }
 .thumb { background-color: black; }
+/* Song without cover art: neutral surface + accent-tinted disc, follows the theme */
+.song-art {
+  background-color: @ff_surface_hi;
+  background-image: radial-gradient(circle at 50% 45%, alpha(@ff_accent, 0.16), transparent 62%);
+}
+.song-art-icon {
+  min-width: 72px; min-height: 72px; border-radius: 999px;
+  color: @ff_text_dim;
+  background-color: alpha(@ff_text_dim, 0.10);
+  border: 1px solid alpha(@ff_text_dim, 0.18);
+}
 .preview-surface { background-color: black; }
 
 .badge {
@@ -376,6 +387,32 @@ button.hb-btn.mini-play:hover { background-color: shade(@ff_accent, 1.1); color:
 .viz-panel scale trough { min-height: 4px; border-radius: 99px; background-color: @ff_border; }
 .viz-panel scale highlight { border-radius: 99px; background-color: @ff_accent; }
 .viz-panel scale slider { min-width: 14px; min-height: 14px; margin: -5px; border-radius: 99px; background: white; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35); }
+
+/* Equalizer */
+.player-btn.eq-on { color: @ff_accent; }
+.eq-panel-box { padding: 14px 16px 16px; min-width: 520px; }
+.eq-title { font-size: 15px; font-weight: 700; }
+.eq-curve {
+  border-radius: 10px;
+  background-color: alpha(@ff_text_dim, 0.07);
+  border: 1px solid alpha(@ff_text_dim, 0.12);
+}
+.eq-sliders { padding: 2px 0; }
+.eq-band { min-width: 38px; }
+.eq-preamp { margin-right: 6px; }
+.eq-sep { margin: 22px 6px 22px 0; background-color: alpha(@ff_text_dim, 0.18); }
+.eq-value { font-size: 11px; font-weight: 600; font-feature-settings: "tnum"; color: @ff_text_dim; }
+.eq-freq { font-size: 11px; font-weight: 600; color: @ff_text_dim; }
+.eq-preamp .eq-freq { color: @ff_accent; }
+.eq-panel scale.vertical { min-width: 22px; }
+.eq-panel scale.vertical trough { min-width: 4px; border-radius: 99px; background-color: alpha(@ff_text_dim, 0.22); }
+.eq-panel scale.vertical highlight { background: none; }
+.eq-panel scale.vertical slider {
+  min-width: 16px; min-height: 16px; margin: -6px; border-radius: 99px;
+  background: white; border: 2px solid @ff_accent; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+}
+.eq-chip { font-size: 12px; padding: 6px 10px; border-radius: 99px; }
+.eq-chip:checked { color: @ff_accent; background-color: alpha(@ff_accent, 0.16); box-shadow: inset 0 0 0 1px alpha(@ff_accent, 0.45); }
 
 /* Update dialog */
 .update-box { padding: 22px 24px 18px; }

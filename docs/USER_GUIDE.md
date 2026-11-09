@@ -90,6 +90,21 @@ colors and other options in the visualizer controls.
 | `R` | Random preset |
 | `F` | Full-screen visualizer |
 
+### Equalizer
+
+Press `E` or click the equalizer button in the player's bottom bar. It works for both music and
+videos.
+
+- **10 bands** from 31 Hz to 16 kHz, each from −12 to +12 dB. Double-click a slider to reset it.
+- **Preamp**: lower it if heavy boosts sound harsh. A built-in limiter stops crackling.
+- **Presets** such as Bass Boost, Vocal, Rock and Speech. Click **+** to save your own settings as a
+  preset and **−** to delete one. **↶** resets everything to flat.
+- **Volume leveling**, **Stereo widening** and **Headphone crossfeed** can be turned on separately.
+- The curve above the sliders shows the overall sound shape. The switch at the top turns the
+  equalizer off without losing your settings.
+
+Songs without cover art show a music icon that follows your theme colors.
+
 ## Other library shortcuts
 
 | Key | Action |
