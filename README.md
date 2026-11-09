@@ -8,7 +8,7 @@ Built with GTK 4, libadwaita, libmpv (OpenGL render API), FFmpeg and SQLite. No 
 
 ENPlayer was previously called NEPLAYER (and before that FrameFlow). Installing the `enplayer` package
 replaces the old one; your library, history and settings stay where they were.
-Its sister app is **ENViewer**, the image viewer (`~/Videos/imview`).
+Its sister app is **ENViewer**, the image viewer (`~/Videos/UBWIN/enviewer`).
 
 ## Features
 
@@ -143,14 +143,14 @@ Installer file: `dist/enplayer_1.4.9_all.deb`. Na thakle project folder e `bash 
 **Ctrl+Alt+T** chepe Terminal khulun, tarpor eta paste kore Enter chapun:
 
 ```bash
-sudo apt install ~/Videos/vplayer/dist/enplayer_1.4.9_all.deb
+sudo apt install ~/Videos/UBWIN/enplayer/dist/enplayer_1.4.9_all.deb
 ```
 
 Password chaile apnar login password din. Type korar shomoy kichu dekhabe na, eta swabhabik.
 
 ### Upay 2: Mouse die
 
-1. Files app e `Videos → vplayer → dist` folder e jan.
+1. Files app e `Videos → UBWIN → enplayer → dist` folder e jan.
 2. `enplayer_1.4.9_all.deb` e **right-click** kore **Open With Other Application → Software Install** select korun.
 3. **Install** chepe password din.
 
