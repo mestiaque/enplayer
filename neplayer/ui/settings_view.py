@@ -2,16 +2,34 @@
 category list on the left and flat rows on the right (title + hint on the
 left, control on the right, hairline separators)."""
 import os
+import platform
+from pathlib import Path
 
 import gi
 
 gi.require_version('Gtk', '4.0')
 gi.require_version('Adw', '1')
-from gi.repository import Adw, Gtk
+from gi.repository import Adw, Gio, Gtk
 
 from neplayer.config import ACCENTS, APP_ID, APP_NAME, COPYRIGHT_YEAR, DATA_DIR, DEFAULT_EXTENSIONS, DEVELOPER, DEVELOPER_EMAIL, DEVELOPER_WEBSITE, LOG_PATH, VERSION
 from neplayer.core import cache
 from neplayer.models.video import format_size
+
+
+def about_facts():
+    """Version facts for About and bug reports; every part is optional."""
+    system = f'{platform.system()} {platform.release()} · {platform.machine()}'
+    try:
+        import mpv
+        api = mpv._mpv_client_api_version()
+        engine = f'libmpv (client API {api[0]}.{api[1]})'
+    except Exception:  # missing or unusual libmpv: still show the rest
+        engine = 'libmpv'
+    try:
+        toolkit = f'GTK {Gtk.get_major_version()}.{Gtk.get_minor_version()}.{Gtk.get_micro_version()} · libadwaita {Adw.get_major_version()}.{Adw.get_minor_version()}.{Adw.get_micro_version()} · Python {platform.python_version()}'
+    except Exception:
+        toolkit = f'GTK 4 · libadwaita · Python {platform.python_version()}'
+    return {'system': system, 'engine': engine, 'toolkit': toolkit}
 
 SECTIONS = ['General', 'Appearance', 'Playback', 'Hover preview', 'Library', 'Performance',
             'Privacy', 'About']
@@ -220,17 +238,22 @@ class SettingsView(Gtk.Box):
         t.append(desc)
         head.append(t)
         p.append(head)
-        for title, value in (('Playback engine', 'libmpv · GTK 4 · libadwaita'),
-                             ('Library data', str(DATA_DIR)),
-                             ('Thumbnail cache', self.ctx.settings['cache_dir']),
-                             ('Log file', str(LOG_PATH))):
-            v = Gtk.Label(label=value, xalign=1, selectable=True, ellipsize=1, max_width_chars=48)
-            v.add_css_class('set-value')
-            self._row(p, title, None, v)
 
-        dev_title = Gtk.Label(label='DEVELOPER', xalign=0)
-        dev_title.add_css_class('set-section-title')
-        p.append(dev_title)
+        facts = about_facts()
+        self._section_title(p, 'THIS COPY')
+        self._row(p, 'Version', None, self._value(VERSION))
+        self._row(p, 'System', None, self._value(facts['system']))
+        self._row(p, 'Playback engine', None, self._value(facts['engine']))
+        self._row(p, 'Interface', None, self._value(facts['toolkit']))
+        for title, path in (('Library and settings', DATA_DIR),
+                            ('Thumbnail cache', self.ctx.settings['cache_dir']),
+                            ('Log file', LOG_PATH)):
+            self._path_row(p, title, path)
+        copy = Gtk.Button(label='Copy diagnostics', valign=Gtk.Align.CENTER)
+        copy.connect('clicked', lambda *_: self._copy_diagnostics(facts))
+        self._row(p, 'Bug report', 'Version and system details for a bug report', copy)
+
+        self._section_title(p, 'DEVELOPER')
         self._row(p, 'Developed by', None, self._value(DEVELOPER))
         mail = Gtk.LinkButton(uri=f'mailto:{DEVELOPER_EMAIL}', label=DEVELOPER_EMAIL)
         mail.add_css_class('set-link')
@@ -238,8 +261,41 @@ class SettingsView(Gtk.Box):
         web = Gtk.LinkButton(uri=DEVELOPER_WEBSITE, label=DEVELOPER_WEBSITE.split('//', 1)[-1])
         web.add_css_class('set-link')
         self._row(p, 'Website', None, web)
-        self._row(p, 'Also by the developer', 'The matching image viewer', self._value('ENViewer'))
-        self._row(p, 'Copyright', None, self._value(f'© {COPYRIGHT_YEAR} {DEVELOPER} · GPL-3.0'))
+        self._row(p, 'Also by the developer', 'Same look and themes', self._value('ENViewer · ENDownloader · ENPost'))
+        self._row(p, 'Licence', None, self._value(f'© {COPYRIGHT_YEAR} {DEVELOPER} · GPL-3.0'))
+
+        self._section_title(p, 'BUILT WITH')
+        for lib, what, licence in (('libmpv', 'playback', 'GPL-2.0+ / LGPL-2.1+'),
+                                   ('FFmpeg', 'thumbnails and probing', 'LGPL / GPL'),
+                                   ('GTK 4 · libadwaita', 'interface', 'LGPL-2.1+'),
+                                   ('Python · PyGObject · python-mpv', 'application', 'PSF · LGPL · GPL / LGPL'),
+                                   ('SQLite', 'library data', 'public domain')):
+            self._row(p, lib, what, self._value(licence))
+
+    def _section_title(self, page, text):
+        title = Gtk.Label(label=text, xalign=0)
+        title.add_css_class('set-section-title')
+        page.append(title)
+
+    def _path_row(self, page, title, path):
+        """Path under the title, an Open button that shows it in the file manager."""
+        path = Path(path)
+        btn = Gtk.Button(label='Open', valign=Gtk.Align.CENTER)
+
+        def open_it(*_):
+            target = path if path.is_dir() else path.parent
+            target.mkdir(parents=True, exist_ok=True)
+            Gio.AppInfo.launch_default_for_uri(target.as_uri(), None)
+        btn.connect('clicked', open_it)
+        hint = self._row(page, title, str(path), btn)
+        hint.set_selectable(True)
+        hint.set_wrap(False)
+        hint.set_ellipsize(3)  # middle: keep the start and the file name visible
+
+    def _copy_diagnostics(self, facts):
+        text = '\n'.join((f'{APP_NAME} {VERSION}', facts['system'], facts['engine'], facts['toolkit']))
+        self.get_clipboard().set(text)
+        self.ctx.toast('Diagnostics copied')
 
     @staticmethod
     def _value(text):
