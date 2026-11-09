@@ -261,7 +261,7 @@ class SettingsView(Gtk.Box):
         web = Gtk.LinkButton(uri=DEVELOPER_WEBSITE, label=DEVELOPER_WEBSITE.split('//', 1)[-1])
         web.add_css_class('set-link')
         self._row(p, 'Website', None, web)
-        self._row(p, 'Also by the developer', 'Same look and themes', self._value('ENViewer · ENDownloader · ENPost'))
+        self._row(p, 'Also by the developer', 'Same look and themes', self._value('ENViewer · ENSave · ENPost'))
         self._row(p, 'Licence', None, self._value(f'© {COPYRIGHT_YEAR} {DEVELOPER} · GPL-3.0'))
 
         self._section_title(p, 'BUILT WITH')
