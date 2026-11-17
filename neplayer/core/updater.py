@@ -181,6 +181,12 @@ def _ps(text):
     return "'" + str(text).replace("'", "''") + "'"
 
 
+def _win(path):
+    """A Windows path with backslashes. The bundled (MSYS2) Python writes Windows paths with forward
+    slashes, which Inno Setup's /DIR= and some Windows tools do not take everywhere."""
+    return str(path).replace('/', '\\')
+
+
 def windows_update_script(installer, app_dir, exe, pid, log, all_users=False):
     """PowerShell that finishes a Windows update once ENPlayer (process `pid`) has quit: runs the
     Inno Setup installer silently over `app_dir`, then starts `exe`. Every step goes to `log`.
@@ -190,6 +196,7 @@ def windows_update_script(installer, app_dir, exe, pid, log, all_users=False):
     It runs through -EncodedCommand: a `cmd /c "..."` line breaks here, because Windows programs
     escape the quotes around paths as \\" , which cmd.exe does not understand, and because the
     `timeout` command fails without a console."""
+    installer, app_dir, exe, log = _win(installer), _win(app_dir), _win(exe), _win(log)
     dir_arg = _ps('/DIR="%s"' % app_dir)   # Inno Setup reads the quoted folder itself
     return '\n'.join([
         "$ErrorActionPreference = 'Continue'",

@@ -524,6 +524,12 @@ class UpdaterTests(unittest.TestCase):
                                               W(r'C:\Program Files\ENPlayer\bin\ENPlayer.exe'), 1,
                                               W(r'C:\Temp\u.log'), all_users=True)
         self.assertIn("'/ALLUSERS'", admin)                             # Program Files: admin mode
+        # The bundled MSYS2 Python writes Windows paths with forward slashes: the script still
+        # gets backslashes.
+        msys = updater.windows_update_script('C:/Users/A/Cache/S.exe', 'C:/Program Files/ENPlayer',
+                                             'C:/Program Files/ENPlayer/bin/ENPlayer.exe', 1, 'C:/Temp/u.log')
+        self.assertIn(r"'/DIR=" + '"C:\\Program Files\\ENPlayer"' + "'", msys)
+        self.assertNotIn('C:/', msys)
 
     def test_folder_writable(self):
         from neplayer.core import updater
