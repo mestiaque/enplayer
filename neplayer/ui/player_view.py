@@ -16,6 +16,7 @@ from neplayer.models.video import format_duration, resolution_label
 from neplayer.player import shortcuts
 from neplayer.player.equalizer import EqualizerController
 from neplayer.ui.equalizer_panel import EqualizerPanel
+from neplayer.ui.priority_row import PriorityRow
 from neplayer.player.mpv_widget import MpvGLArea
 from neplayer.player.playback_manager import PlaybackManager
 from neplayer.config import AUDIO_EXTENSIONS
@@ -202,7 +203,8 @@ class PlayerView(Gtk.Overlay):
         seek_row.append(self.dur_lbl)
         box.append(seek_row)
 
-        row = Gtk.Box(spacing=4)
+        # In a narrow window the less used controls hide (highest priority number first).
+        row = PriorityRow(spacing=4)
         self.prev_btn = _icon_button('media-skip-backward-symbolic', 'Previous (P)', self.prev)
         self.back_btn = _icon_button('media-seek-backward-symbolic', 'Back 10 s (J)',
                                      lambda: self.seek_relative(-10))
@@ -211,8 +213,9 @@ class PlayerView(Gtk.Overlay):
         self.fwd_btn = _icon_button('media-seek-forward-symbolic', 'Forward 10 s (L)',
                                     lambda: self.seek_relative(10))
         self.next_btn = _icon_button('media-skip-forward-symbolic', 'Next (N)', self.next)
-        for b in (self.prev_btn, self.back_btn, self.play_btn, self.fwd_btn, self.next_btn):
-            row.append(b)
+        for b, prio in ((self.prev_btn, 2), (self.back_btn, 1), (self.play_btn, 0), (self.fwd_btn, 1),
+                        (self.next_btn, 2)):
+            row.add(b, priority=prio)
         # Music controls (shown for audio)
         self.shuffle_btn = Gtk.ToggleButton(icon_name='media-playlist-shuffle-symbolic', tooltip_text='Shuffle')
         self.shuffle_btn.add_css_class('flat')
@@ -220,12 +223,12 @@ class PlayerView(Gtk.Overlay):
         self.shuffle_btn.set_active(bool(self.settings['shuffle']))
         self.shuffle_btn.connect('toggled', self._on_shuffle)
         self.repeat_btn = _icon_button('media-playlist-repeat-symbolic', 'Repeat', self._cycle_repeat)
-        row.append(self.shuffle_btn)
-        row.append(self.repeat_btn)
+        row.add(self.shuffle_btn, priority=3)
+        row.add(self.repeat_btn, priority=3)
         self._update_repeat_btn()
 
         self.mute_btn = _icon_button('audio-volume-high-symbolic', 'Mute (M)', self.toggle_mute)
-        row.append(self.mute_btn)
+        row.add(self.mute_btn)
         self.vol = Gtk.Scale(orientation=Gtk.Orientation.HORIZONTAL)
         self.vol.set_range(0, 130)
         self.vol.set_draw_value(False)
@@ -233,11 +236,11 @@ class PlayerView(Gtk.Overlay):
         self.vol.add_mark(100, Gtk.PositionType.BOTTOM, None)
         self.vol.add_css_class('volume-bar')
         self.vol.connect('change-value', lambda _s, _sc, v: self._set_volume(v) or False)
-        row.append(self.vol)
+        row.add(self.vol, priority=2)
 
-        self.status_lbl = Gtk.Label(hexpand=True, xalign=0)
+        self.status_lbl = Gtk.Label(hexpand=True, xalign=0, ellipsize=3)
         self.status_lbl.add_css_class('player-status')
-        row.append(self.status_lbl)
+        row.add(self.status_lbl, expand=True)
 
         self.eq_btn = Gtk.MenuButton(icon_name='nep-equalizer-symbolic', tooltip_text='Equalizer (E)')
         self.eq_btn.add_css_class('flat')
@@ -251,7 +254,7 @@ class PlayerView(Gtk.Overlay):
         self._update_eq_btn()
         self.settings.connect('changed', lambda _s, k: k in ('eq_enabled', 'eq_gains', 'eq_preamp', 'eq_leveling',
                                                             'eq_widen', 'eq_crossfeed') and self._update_eq_btn())
-        row.append(self.eq_btn)
+        row.add(self.eq_btn, priority=3)
 
         self.speed_btn = Gtk.MenuButton(label='1×', tooltip_text='Playback speed')
         self.speed_btn.add_css_class('flat')
@@ -261,21 +264,21 @@ class PlayerView(Gtk.Overlay):
         for s in SPEEDS:
             speed_menu.append('Normal' if s == 1 else f'{s:g}×', f'player.speed(\'{s}\')')
         self.speed_btn.set_menu_model(speed_menu)
-        row.append(self.speed_btn)
+        row.add(self.speed_btn, priority=2)
 
         self.sub_btn = Gtk.MenuButton(icon_name='media-view-subtitles-symbolic',
                                       tooltip_text='Subtitles (S)')
         self.sub_btn.add_css_class('flat')
         self.sub_btn.add_css_class('player-btn')
-        row.append(self.sub_btn)
+        row.add(self.sub_btn, priority=1)
         self.audio_btn = Gtk.MenuButton(icon_name='audio-x-generic-symbolic',
                                         tooltip_text='Audio track (A)')
         self.audio_btn.add_css_class('flat')
         self.audio_btn.add_css_class('player-btn')
-        row.append(self.audio_btn)
+        row.add(self.audio_btn, priority=2)
         self.fs_btn = _icon_button('view-fullscreen-symbolic', 'Fullscreen (F)',
                                    lambda: self.emit('fullscreen-toggle'))
-        row.append(self.fs_btn)
+        row.add(self.fs_btn)
         box.append(row)
 
         hover = Gtk.EventControllerMotion()

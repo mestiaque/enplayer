@@ -28,7 +28,8 @@ PKGS=(
 )
 
 echo "==> Installing build packages"
-pacman -S --needed --noconfirm pacman-contrib rsync "$PKG_PREFIX-python-pip" "${PKGS[@]}"
+# gcc (with binutils: windres, objdump) builds ENPlayer.exe and checks the DLLs; it is not bundled.
+pacman -S --needed --noconfirm pacman-contrib rsync "$PKG_PREFIX-python-pip" "$PKG_PREFIX-gcc" "${PKGS[@]}"
 
 echo "==> Resolving dependency closure"
 mapfile -t ALL < <(for p in "${PKGS[@]}"; do pactree -u -l "$p"; done | sort -u | grep "^$PKG_PREFIX-")
@@ -64,6 +65,17 @@ rsync -a --exclude '__pycache__' --exclude '*.pyc' "$ROOT/neplayer" "$SITE/"
 cp "$ROOT/packaging/windows/enplayer.ico" "$OUT/enplayer.ico"
 cp "$ROOT/README.md" "$OUT/README.md"
 
+echo "==> ENPlayer.exe (named program for Open with, taskbar and Default apps; see launcher.c)"
+VER="$(sed -n "s/^VERSION = '\(.*\)'/\1/p" "$ROOT/neplayer/config.py")"
+PYVER="$(basename "$PYLIB")"
+BUILD="$(mktemp -d)"
+cp "$ROOT/packaging/windows/launcher.c" "$ROOT/packaging/windows/launcher.rc" "$ROOT/packaging/windows/enplayer.ico" "$BUILD/"
+printf '#define VER_NUM %s,0\n#define VER_STR "%s"\n' "${VER//./,}" "$VER" > "$BUILD/version.h"
+(cd "$BUILD" && windres launcher.rc -O coff -o launcher.res &&
+  gcc -O2 -Wall -municode -mwindows -I"$PREFIX/include/$PYVER" launcher.c launcher.res \
+      -L"$PREFIX/lib" -l"$PYVER" -o "$OUT/bin/ENPlayer.exe")
+rm -rf "$BUILD"
+
 echo "==> Regenerating runtime caches inside the bundle"
 glib-compile-schemas "$OUT/share/glib-2.0/schemas"
 gtk4-update-icon-cache -q -t -f "$OUT/share/icons/hicolor" || true
@@ -78,6 +90,9 @@ fi
 
 echo "==> Pre-compiling Python bytecode"
 "$OUT/bin/python.exe" -m compileall -q "$SITE/neplayer" "$SITE/mpv.py" || true
+
+echo "==> Removing what ENPlayer never loads (see prune_bundle.py)"
+OBJDUMP="$PREFIX/bin/objdump" "$PREFIX/bin/python" "$ROOT/packaging/windows/prune_bundle.py" "$OUT"
 
 echo "==> Smoke test (imports with the bundled interpreter only)"
 PATH="$OUT/bin:/usr/bin" "$OUT/bin/python.exe" -X faulthandler -u - <<'PY'
@@ -100,6 +115,10 @@ step('libmpv ' + str(mpv.MPV(vo='null', terminal='no').mpv_version))
 import neplayer.main, neplayer.ui.main_window
 step('ENPlayer modules')
 PY
+
+echo "==> ENPlayer.exe starts Python and ENPlayer (GApplication prints its --help and exits)"
+PATH="$OUT/bin:/usr/bin" timeout 120 "$OUT/bin/ENPlayer.exe" --help | tee /dev/stderr | grep -q -- '--version\|Usage' \
+  || { echo "ENPlayer.exe did not start"; exit 1; }
 
 du -sh "$OUT"
 echo "Bundle ready: $OUT"

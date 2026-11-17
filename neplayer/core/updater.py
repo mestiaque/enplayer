@@ -62,7 +62,7 @@ def install_kind():
     """How this copy was installed: 'deb', 'windows', or None (running from source)."""
     here = Path(__file__).resolve()
     if sys.platform == 'win32':
-        # bundled build: <app>\bin\pythonw.exe + <app>\lib\...\neplayer
+        # bundled build: <app>\bin\pythonw.exe (+ ENPlayer.exe since 1.4.10) + <app>\lib\...\neplayer
         return 'windows' if (Path(sys.executable).parent / 'pythonw.exe').exists() and 'site-packages' in str(here) else None
     if DEB_INSTALL_DIR in here.parents and shutil.which('apt-get'):
         return 'deb'
@@ -168,10 +168,10 @@ def install(path, kind=None):
             raise UpdateError('Installing the update failed:\n' + '\n'.join(tail))
         return
     if kind == 'windows':
-        pythonw = Path(sys.executable).parent / 'pythonw.exe'
+        exe = Path(sys.executable).parent / 'ENPlayer.exe'  # every installer since 1.4.10 ships it
         # wait for ENPlayer to exit, install silently over the same folder, start the new version
         cmd = (f'timeout /t 2 /nobreak >nul & "{path}" /VERYSILENT /SUPPRESSMSGBOXES /NORESTART '
-               f'/CLOSEAPPLICATIONS & start "" "{pythonw}" -m neplayer.main')
+               f'/CLOSEAPPLICATIONS & start "" "{exe}"')
         flags = getattr(subprocess, 'DETACHED_PROCESS', 0) | getattr(subprocess, 'CREATE_NEW_PROCESS_GROUP', 0)
         subprocess.Popen(['cmd', '/c', cmd], creationflags=flags, close_fds=True)
         return

@@ -5,6 +5,8 @@ gi.require_version('Gtk', '4.0')
 gi.require_version('Adw', '1')
 from gi.repository import Adw, Gio, GObject, Gtk
 
+from neplayer.ui.priority_row import PriorityRow
+
 SORT_OPTIONS = [
     ('recent', 'Recently Added'),
     ('name_asc', 'Name (A–Z)'),
@@ -35,7 +37,8 @@ class LibraryHeader(Gtk.Box):
 
     def __init__(self):
         super().__init__(orientation=Gtk.Orientation.VERTICAL)
-        self.bar = Adw.HeaderBar()
+        # Window buttons are part of the row below, so the whole width is laid out in one box.
+        self.bar = Adw.HeaderBar(show_end_title_buttons=False)
         self.bar.add_css_class('flat')
         self.append(self.bar)
         self.filters = {'resolution': '', 'format': '', 'duration': '', 'favorites': False}
@@ -53,13 +56,10 @@ class LibraryHeader(Gtk.Box):
                                             tooltip_text='Toggle sidebar (F9)')
         self.sidebar_btn.add_css_class('flat')
         self.sidebar_btn.add_css_class('hb-btn')
-        self.bar.pack_start(self.sidebar_btn)
         self.back_btn = icon_btn('go-previous-symbolic', 'Back (Alt+←)', 'win.go-back')
         self.fwd_btn = icon_btn('go-next-symbolic', 'Forward (Alt+→)', 'win.go-forward')
-        self.bar.pack_start(self.back_btn)
-        self.bar.pack_start(self.fwd_btn)
 
-        titles = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, valign=Gtk.Align.CENTER)
+        titles = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, valign=Gtk.Align.CENTER, hexpand=True)
         titles.add_css_class('page-titles')
         self.page_title = Gtk.Label(xalign=0, ellipsize=3)
         self.page_title.add_css_class('header-title')
@@ -67,10 +67,8 @@ class LibraryHeader(Gtk.Box):
         self.page_sub.add_css_class('header-subtitle')
         titles.append(self.page_title)
         titles.append(self.page_sub)
-        self.bar.pack_start(titles)
-        self.bar.set_title_widget(Gtk.Box())
 
-        # ---- right side (pack_end adds right-to-left)
+        # ---- right side
         more = Gio.Menu()
         sec = Gio.Menu()
         sec.append('Open File…', 'win.open-file')
@@ -82,12 +80,11 @@ class LibraryHeader(Gtk.Box):
         sec.append('About ENPlayer', 'win.about')
         more.append_section(None, sec)
 
-        self.bar.pack_end(icon_btn('emblem-system-symbolic', 'Settings (Ctrl+,)', 'win.settings'))
+        settings_btn = icon_btn('emblem-system-symbolic', 'Settings (Ctrl+,)', 'win.settings')
         more_btn = Gtk.MenuButton(icon_name='view-more-horizontal-symbolic', menu_model=more,
                                   tooltip_text='More')
         more_btn.add_css_class('flat')
         more_btn.add_css_class('hb-btn')
-        self.bar.pack_end(more_btn)
 
         theme = Gio.Menu()
         theme.append('Dark', "win.theme('dark')")
@@ -97,20 +94,17 @@ class LibraryHeader(Gtk.Box):
         self.top_btn.add_css_class('flat')
         self.top_btn.add_css_class('hb-btn')
         self.top_btn.set_action_name('win.always-on-top')
-        self.bar.pack_end(self.top_btn)
 
         self.theme_btn = Gtk.MenuButton(menu_model=theme, tooltip_text='Theme')
         self.theme_btn.add_css_class('flat')
         self.theme_btn.add_css_class('hb-btn')
-        self.bar.pack_end(self.theme_btn)
-        self.bar.pack_end(icon_btn('document-open-symbolic', 'Open file (Ctrl+O)', 'win.open-file'))
-        self.bar.pack_end(icon_btn('folder-open-symbolic', 'Add folder (Ctrl+N)', 'win.add-folder'))
+        open_btn = icon_btn('document-open-symbolic', 'Open file (Ctrl+O)', 'win.open-file')
+        add_btn = icon_btn('folder-open-symbolic', 'Add folder (Ctrl+N)', 'win.add-folder')
 
         sep = Gtk.Separator(orientation=Gtk.Orientation.VERTICAL)
         sep.add_css_class('hb-sep')
-        self.bar.pack_end(sep)
 
-        self.bar.pack_end(icon_btn('view-refresh-symbolic', 'Scan library (F5)', 'win.rescan'))
+        rescan_btn = icon_btn('view-refresh-symbolic', 'Scan library (F5)', 'win.rescan')
         density = Gio.Menu()
         density.append('Compact', "win.density('small')")
         density.append('Comfortable', "win.density('medium')")
@@ -118,13 +112,11 @@ class LibraryHeader(Gtk.Box):
         dens = Gtk.MenuButton(icon_name='view-grid-symbolic', menu_model=density, tooltip_text='Grid density')
         dens.add_css_class('flat')
         dens.add_css_class('hb-btn')
-        self.bar.pack_end(dens)
 
         self.filter_btn = Gtk.MenuButton(icon_name='ff-filter-symbolic', tooltip_text='Filter')
         self.filter_btn.add_css_class('flat')
         self.filter_btn.add_css_class('hb-btn')
         self.filter_btn.set_popover(self._build_filter_popover())
-        self.bar.pack_end(self.filter_btn)
 
         sort = Gio.Menu()
         for key, label in SORT_OPTIONS:
@@ -133,14 +125,36 @@ class LibraryHeader(Gtk.Box):
                                        tooltip_text='Sort')
         self.sort_btn.add_css_class('flat')
         self.sort_btn.add_css_class('hb-btn')
-        self.bar.pack_end(self.sort_btn)
 
         self.search = Gtk.SearchEntry(placeholder_text='Search videos, files and folders…')
-        self.search.set_size_request(280, -1)
+        self.search.set_width_chars(8)  # shrinks in a narrow window; grows to 280 px when there is room
         self.search.set_valign(Gtk.Align.CENTER)
         self.search.add_css_class('library-search')
         self.search.connect('search-changed', lambda e: self.emit('search-changed', e.get_text()))
-        self.bar.pack_end(self.search)
+
+        # One row for the whole right side: in a narrow window the least needed buttons hide
+        # (Open/Add/Scan stay in the More menu, the rest come back when the window grows).
+        right = PriorityRow(spacing=6, align_end=True)
+        right.add(self.search, natural=280)
+        right.add(self.sort_btn, priority=2)
+        right.add(self.filter_btn, priority=2)
+        right.add(dens, priority=3)
+        right.add(rescan_btn, priority=4)
+        right.add(sep, priority=4)
+        right.add(add_btn, priority=4)
+        right.add(open_btn, priority=4)
+        right.add(self.theme_btn, priority=3)
+        right.add(self.top_btn, priority=3)
+        right.add(more_btn)
+        right.add(settings_btn)
+
+        # Adw.HeaderBar keeps its title slot centred between the start and end slots, which
+        # squeezed this row on wide windows; with everything in the title slot it gets it all.
+        row = Gtk.Box(spacing=6, hexpand=True)
+        for w in (self.sidebar_btn, self.back_btn, self.fwd_btn, titles, right):
+            row.append(w)
+        row.append(Gtk.WindowControls(side=Gtk.PackType.END))
+        self.bar.set_title_widget(row)
 
     def set_theme_icon(self, theme):
         self.theme_btn.set_icon_name({'light': 'weather-clear-symbolic',

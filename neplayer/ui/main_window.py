@@ -66,7 +66,7 @@ class MainWindow(Adw.ApplicationWindow):
         self._search_src = None
         self.add_css_class('neplayer')
         self.set_default_size(1360, 860)
-        self.set_size_request(760, 520)
+        self.set_size_request(560, 420)
 
         # ---------- library page
         self.sidebar = Sidebar()

@@ -1,0 +1,32 @@
+// Icon and version information for ENPlayer.exe (Windows shows FileDescription as the app name).
+// build-windows.sh writes version.h with VER_NUM (e.g. 1,4,10,0) and VER_STR (e.g. "1.4.10").
+#include <winver.h>
+#include "version.h"
+
+1 ICON "enplayer.ico"
+
+1 VERSIONINFO
+FILEVERSION VER_NUM
+PRODUCTVERSION VER_NUM
+FILEOS VOS_NT_WINDOWS32
+FILETYPE VFT_APP
+BEGIN
+  BLOCK "StringFileInfo"
+  BEGIN
+    BLOCK "040904B0"
+    BEGIN
+      VALUE "CompanyName", "M. Estiaque Ahmed Khan"
+      VALUE "FileDescription", "ENPlayer"
+      VALUE "FileVersion", VER_STR
+      VALUE "InternalName", "ENPlayer"
+      VALUE "LegalCopyright", "M. Estiaque Ahmed Khan"
+      VALUE "OriginalFilename", "ENPlayer.exe"
+      VALUE "ProductName", "ENPlayer"
+      VALUE "ProductVersion", VER_STR
+    END
+  END
+  BLOCK "VarFileInfo"
+  BEGIN
+    VALUE "Translation", 0x409, 1200
+  END
+END
