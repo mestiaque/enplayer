@@ -117,8 +117,12 @@ step('ENPlayer modules')
 PY
 
 echo "==> ENPlayer.exe starts Python and ENPlayer (GApplication prints its --help and exits)"
-PATH="$OUT/bin:/usr/bin" timeout 120 "$OUT/bin/ENPlayer.exe" --help | tee /dev/stderr | grep -q -- '--version\|Usage' \
-  || { echo "ENPlayer.exe did not start"; exit 1; }
+rc=0
+help="$(PATH="$OUT/bin:/usr/bin" timeout 120 "$OUT/bin/ENPlayer.exe" --help 2>&1)" || rc=$?
+printf '%s\n' "$help" | sed 's/^/    /'
+if [ "$rc" != 0 ] || ! printf '%s' "$help" | grep -q 'Usage'; then
+  echo "ENPlayer.exe did not start (exit code $rc)"; exit 1
+fi
 
 du -sh "$OUT"
 echo "Bundle ready: $OUT"
