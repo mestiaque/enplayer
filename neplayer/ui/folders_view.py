@@ -80,7 +80,12 @@ class FoldersView(Gtk.ScrolledWindow):
         row.add_prefix(icon)
 
         info = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, valign=Gtk.Align.CENTER)
-        count = Gtk.Label(label=f'{f["video_count"]} videos', xalign=1)
+        songs = f.get('audio_count') or 0       # video_count counts every file, songs included
+        vids = (f.get('video_count') or 0) - songs
+        parts = [f'{vids} video{"" if vids == 1 else "s"}'] if vids or not songs else []
+        if songs:
+            parts.append(f'{songs} song{"" if songs == 1 else "s"}')
+        count = Gtk.Label(label=' · '.join(parts), xalign=1)
         count.add_css_class('heading')
         when = Gtk.Label(label=_ago(f['last_scanned_at']) if available else 'Not available',
                          xalign=1)

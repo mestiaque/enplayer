@@ -100,4 +100,4 @@ class ThumbnailWorker:
             finally:
                 with self._cv:
                     self._running.discard(vid)
-            GLib.idle_add(self._on_done, vid, result)
+            GLib.idle_add(self._on_done, vid, result, priority=GLib.PRIORITY_DEFAULT)  # see scan_worker

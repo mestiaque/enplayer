@@ -436,8 +436,8 @@ class SettingsView(Gtk.Box):
                 if b.get_active() != (k == self.ctx.settings['theme']):
                     b.set_active(k == self.ctx.settings['theme'])
         self._watchers.append(('theme', sync))
-        hint = Gtk.Label(label='Applies to the library and the video player. Glass uses translucent panels '
-                               'over a colour gradient.', xalign=0, wrap=True)
+        hint = Gtk.Label(label='Applies to the library and the video player. Glass: light, frosted panels '
+                               'over flowing ribbons in the accent colour.', xalign=0, wrap=True)
         hint.add_css_class('set-hint')
         wrap = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
         wrap.add_css_class('set-row')

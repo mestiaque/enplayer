@@ -54,7 +54,7 @@ class TextureCache:
                 data = (im.width, im.height, im.tobytes(), alpha)
         except Exception as e:
             log.debug('Cannot decode %s: %s', path, e)
-        GLib.idle_add(self._finish, path, data)
+        GLib.idle_add(self._finish, path, data, priority=GLib.PRIORITY_DEFAULT)  # see scan_worker
 
     def _finish(self, path, data):
         tex = None

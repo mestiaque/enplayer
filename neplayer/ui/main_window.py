@@ -95,6 +95,7 @@ class MainWindow(Adw.ApplicationWindow):
 
         content_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
         content_box.add_css_class('ff-main')
+        content_box.set_overflow(Gtk.Overflow.HIDDEN)  # rounded corners in the Glass theme
         content_box.append(self.header)
         content_box.append(self.content)
         self._mini_slot = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
@@ -242,10 +243,9 @@ class MainWindow(Adw.ApplicationWindow):
             self._refresh_grid()
             self.content.set_visible_child_name('grid')
 
-    def play(self, video, card=None, from_start=False):
+    def play(self, video, card=None, from_start=False, playlist=None):
         self.previews.stop('play')
-        playlist = None
-        if card is not None:
+        if playlist is None and card is not None:
             playlist = self.home.playlist_for(card)
         if playlist is None and self.content.get_visible_child_name() == 'grid':
             listing = self.grid.video_list()
@@ -276,7 +276,9 @@ class MainWindow(Adw.ApplicationWindow):
             self.player.play(v, playlist)
             self.set_title(v.get('title') or APP_NAME)
             return
-        self.play(v)
+        # A library file opened from outside (Open file, a file manager, drag and drop) plays with
+        # the rest of its folder, like any other file.
+        self.play(v, playlist=self._sibling_playlist(path))
 
     def _sibling_playlist(self, path):
         d = os.path.dirname(path)
@@ -485,11 +487,16 @@ class MainWindow(Adw.ApplicationWindow):
             title = {'home': 'Home', 'folders': 'Folders'}.get(self.view) or VIEW_TITLES.get(self.view, ('Library',))[0]
         self.header.set_page(title, sub)
         self.status_path.set_label(sub)
+        self._update_status_count()
+
+    def _update_status_count(self):
+        """Home and Folders show the library totals in the status bar (other views count their grid)."""
         if self.view in ('home', 'folders'):
             try:
                 n = len(self.db.query_videos('all'))
                 folders = len(self.db.list_folders())
-                self.status_count.set_label(f'{n:,} videos · {folders} folder' + ('' if folders == 1 else 's'))
+                self.status_count.set_label(f'{n:,} video{"" if n == 1 else "s"} · {folders} folder'
+                                            + ('' if folders == 1 else 's'))
             except Exception:
                 log.exception('status count failed')
 
@@ -504,6 +511,7 @@ class MainWindow(Adw.ApplicationWindow):
             })
         except Exception:
             log.exception('count update failed')
+        self._update_status_count()   # a scan or removal changes the totals too
 
     def _on_folders_changed(self):
         self.sidebar.set_folders(self.db.list_folders())
@@ -540,10 +548,6 @@ class MainWindow(Adw.ApplicationWindow):
             self.app.apply_theme()
         elif key == 'theme':
             self.app.apply_theme()
-            self.header.set_theme_icon(self.settings['theme'])
-            a = self.lookup_action('theme')
-            if a is not None:
-                a.set_state(GLib.Variant('s', self.settings['theme']))
             self.player.apply_theme()
         elif key == 'sort':
             self._refresh_view()
@@ -583,15 +587,11 @@ class MainWindow(Adw.ApplicationWindow):
         add('settings', self.show_settings, ['<Control>comma'])
         add('go-back', lambda: self._go_history(-1), ['<Alt>Left'])
         add('go-forward', lambda: self._go_history(1), ['<Alt>Right'])
-        theme = Gio.SimpleAction.new_stateful('theme', GLib.VariantType('s'), GLib.Variant('s', self.settings['theme']))
-        theme.connect('activate', lambda a, v: (a.set_state(v), self.settings.set('theme', v.get_string())))
-        self.add_action(theme)
         top = Gio.SimpleAction.new_stateful('always-on-top', None,
                                             GLib.Variant('b', self.settings['always_on_top']))
         top.connect('activate', lambda a, _v: self.settings.set('always_on_top', not a.get_state().get_boolean()))
         self.add_action(top)
         self.connect('map', lambda *_: GLib.idle_add(self._apply_always_on_top))
-        self.header.set_theme_icon(self.settings['theme'])
         add('toggle-sidebar', lambda: self.settings.set('sidebar_visible',
                                                        not self.settings['sidebar_visible']), ['F9'])
 
@@ -683,9 +683,9 @@ class MainWindow(Adw.ApplicationWindow):
         box.append(Adw.HeaderBar())
         page = Adw.PreferencesPage()
         for section, items in shortcuts.HELP:
-            g = Adw.PreferencesGroup(title=section)
+            g = Adw.PreferencesGroup(title=GLib.markup_escape_text(section))  # titles are markup ("&")
             for keys, desc in items:
-                r = Adw.ActionRow(title=desc)
+                r = Adw.ActionRow(title=GLib.markup_escape_text(desc))
                 k = Gtk.Label(label=keys)
                 k.add_css_class('keycap')
                 r.add_suffix(k)

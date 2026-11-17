@@ -78,7 +78,8 @@ class PlayerView(Gtk.Overlay):
             osd_level='0', ytdl='no', hr_seek='yes', cache='yes', demuxer_max_bytes='150MiB',
             screenshot_directory=str(Path(GLib.get_user_special_dir(
                 GLib.UserDirectory.DIRECTORY_PICTURES) or Path.home()) / 'Screenshots'),
-            screenshot_format='png', sub_font_size='46', sub_border_size='2.6',
+            screenshot_format='png', screenshot_template='%F %wH-%wM-%wS',  # "movie 00-12-31.png"
+            sub_font_size='46', sub_border_size='2.6',
             sub_shadow_offset='1', sub_color='#FFFFFFFF', sub_border_color='#E6000000',
         )
         self.mpv = self.area.mpv
@@ -113,13 +114,17 @@ class PlayerView(Gtk.Overlay):
         rclick = Gtk.GestureClick(button=Gdk.BUTTON_SECONDARY)
         rclick.connect('pressed', lambda *_: self.toggle_pause())
         self.area.add_controller(rclick)
+        # Dragging the video moves the window (a click still pauses, a double click is fullscreen).
+        move = Gtk.GestureDrag(button=Gdk.BUTTON_PRIMARY)
+        move.connect('drag-update', self._on_video_drag)
+        self.area.add_controller(move)
 
         scroll = Gtk.EventControllerScroll(flags=Gtk.EventControllerScrollFlags.VERTICAL)
         scroll.connect('scroll', self._on_scroll)
         self.area.add_controller(scroll)
 
     # Colour mpv paints around the video (letterbox), per theme.
-    LETTERBOX = {'dark': '#000000', 'light': '#ececf1', 'glass': '#0e0c18'}
+    LETTERBOX = {'dark': '#000000', 'light': '#ececf1', 'glass': '#e3e9f5'}
 
     def apply_theme(self):
         try:
@@ -130,7 +135,7 @@ class PlayerView(Gtk.Overlay):
 
     # =================================================================== UI
     def _build_top_bar(self):
-        bar = Gtk.Box(spacing=10)
+        bar = Gtk.Box(spacing=6)
         bar.add_css_class('player-top')
         back = _icon_button('go-previous-symbolic', 'Back to library (Esc)', self.close)
         back.add_css_class('circular')
@@ -170,16 +175,20 @@ class PlayerView(Gtk.Overlay):
         close = _icon_button('window-close-symbolic', 'Close player (Esc)', self.close)
         close.add_css_class('player-close')
         bar.append(close)
+        # Dragging the bar (outside its buttons) moves the window, as the library's header does.
+        handle = Gtk.WindowHandle()
+        handle.set_child(bar)
         self.top = Gtk.Revealer(transition_type=Gtk.RevealerTransitionType.CROSSFADE,
                                 transition_duration=220, reveal_child=True, valign=Gtk.Align.START)
-        self.top.set_child(bar)
+        self.top.set_overflow(Gtk.Overflow.VISIBLE)  # the bar's shadow is not cut off square
+        self.top.set_child(handle)
         self.add_overlay(self.top)
 
     def _build_bottom_bar(self):
-        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
+        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
         box.add_css_class('player-controls')
 
-        seek_row = Gtk.Box(spacing=12)
+        seek_row = Gtk.Box(spacing=10)
         self.pos_lbl = Gtk.Label(label='0:00')
         self.pos_lbl.add_css_class('time-label')
         self.seek = Gtk.Scale(orientation=Gtk.Orientation.HORIZONTAL, hexpand=True)
@@ -289,6 +298,7 @@ class PlayerView(Gtk.Overlay):
 
         self.bottom = Gtk.Revealer(transition_type=Gtk.RevealerTransitionType.CROSSFADE,
                                    transition_duration=220, reveal_child=True, valign=Gtk.Align.END)
+        self.bottom.set_overflow(Gtk.Overflow.VISIBLE)
         self.bottom.set_child(box)
         self.add_overlay(self.bottom)
 
@@ -298,6 +308,7 @@ class PlayerView(Gtk.Overlay):
         self.osd_rev = Gtk.Revealer(transition_type=Gtk.RevealerTransitionType.CROSSFADE,
                                     transition_duration=150, halign=Gtk.Align.CENTER,
                                     valign=Gtk.Align.START, can_target=False)
+        self.osd_rev.set_overflow(Gtk.Overflow.VISIBLE)
         self.osd_rev.set_margin_top(90)
         self.osd_rev.set_child(self.osd)
         self.add_overlay(self.osd_rev)
@@ -307,6 +318,8 @@ class PlayerView(Gtk.Overlay):
         self.flash_rev = Gtk.Revealer(transition_type=Gtk.RevealerTransitionType.CROSSFADE,
                                       transition_duration=250, halign=Gtk.Align.CENTER,
                                       valign=Gtk.Align.CENTER, can_target=False)
+        # A revealer clips to its box: without this the round flash's shadow shows as a square.
+        self.flash_rev.set_overflow(Gtk.Overflow.VISIBLE)
         self.flash_rev.set_child(self.flash)
         self.add_overlay(self.flash_rev)
 
@@ -575,6 +588,8 @@ class PlayerView(Gtk.Overlay):
         self._duration = float(v.get('duration') or 0)
         self._position = 0.0
         self.error_box.set_visible(False)
+        self.area.set_opacity(1)
+        self._sidecar_sub_checked = False
         self.title_lbl.set_label(v.get('title') or os.path.basename(v['file_path']))
         self._set_audio_mode(v)
         self._update_subtitle_line(v)
@@ -817,6 +832,9 @@ class PlayerView(Gtk.Overlay):
         self._set_track(kind, nxt)
 
     def screenshot(self):
+        if self._is_audio:   # a song has no picture to capture (its cover art is not a video track)
+            self.show_osd('Nothing to capture: this is a song')
+            return
         try:
             d = self.mpv['screenshot-directory']
             os.makedirs(d, exist_ok=True)
@@ -868,6 +886,7 @@ class PlayerView(Gtk.Overlay):
             log.debug('event handling failed', exc_info=True)
 
     def _on_file_loaded(self):
+        self._select_sidecar_subtitle()   # by now mpv has added the subtitle files next to the video
         self.spinner.stop()
         self.spinner.set_visible(False)
         return False
@@ -890,6 +909,12 @@ class PlayerView(Gtk.Overlay):
         self.error_title.set_label(title)
         self.error_desc.set_label(desc)
         self.error_box.set_visible(True)
+        self.area.set_opacity(0)   # not the last frame of the previous video behind the message
+        # nor its position and play state in the controls
+        self._position = 0.0
+        self.seek.set_value(0)
+        self.pos_lbl.set_label('0:00')
+        self.play_btn.set_icon_name('media-playback-start-symbolic')
         self.show_controls(force=True)
 
     def _on_prop(self, name, value):
@@ -948,6 +973,24 @@ class PlayerView(Gtk.Overlay):
                 self._eof_handled = True
                 self._on_eof()
         return False
+
+    def _select_sidecar_subtitle(self):
+        """With no preferred subtitle language, embedded subtitles stay off, but a subtitle file
+        next to the video (movie.srt for movie.mp4) is turned on: it is there to be shown. Once per
+        file, so turning it off afterwards sticks."""
+        if getattr(self, '_sidecar_sub_checked', True) or self.settings['subtitle_lang']:
+            return
+        self._sidecar_sub_checked = True
+        try:
+            tracks = list(self.mpv.track_list or [])
+        except Exception:
+            return
+        ext = next((t for t in tracks if t.get('type') == 'sub' and t.get('external')), None)
+        if ext is not None and not any(t.get('type') == 'sub' and t.get('selected') for t in tracks):
+            try:
+                self.mpv['sid'] = int(ext['id'])
+            except Exception:
+                log.debug('could not select the subtitle file', exc_info=True)
 
     def _on_eof(self):
         v = self.manager.current
@@ -1072,6 +1115,27 @@ class PlayerView(Gtk.Overlay):
             if self._click_src is not None:
                 GLib.source_remove(self._click_src)
             self._click_src = GLib.timeout_add(230, self._single_click)
+
+    def _on_video_drag(self, gesture, dx, dy):
+        if dx * dx + dy * dy < 64:   # under 8 px it is a click
+            return
+        native = self.get_native()
+        surface = native.get_surface() if native else None
+        if surface is None or not isinstance(surface, Gdk.Toplevel) or native.is_fullscreen() or native.is_maximized():
+            return
+        if self._click_src is not None:   # it was a drag, not a click: no pause
+            GLib.source_remove(self._click_src)
+            self._click_src = None
+        _ok, x0, y0 = gesture.get_start_point()
+        # PyGObject returns (x, y) or (ok, x, y) depending on the GTK version, None on failure.
+        pt = self.area.translate_coordinates(native, x0, y0)
+        if not pt:
+            return
+        x, y = pt[-2], pt[-1]
+        tx, ty = native.get_surface_transform()
+        gesture.set_state(Gtk.EventSequenceState.CLAIMED)
+        surface.begin_move(gesture.get_device(), Gdk.BUTTON_PRIMARY, x + tx, y + ty, gesture.get_current_event_time())
+        gesture.reset()
 
     def _single_click(self):
         self._click_src = None

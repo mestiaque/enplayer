@@ -291,7 +291,8 @@ class Database:
 
     def list_folders(self):
         rows = self.conn.execute(
-            'SELECT fo.*, (SELECT COUNT(*) FROM videos v WHERE v.folder_id=fo.id AND v.missing=0) AS video_count '
+            'SELECT fo.*, (SELECT COUNT(*) FROM videos v WHERE v.folder_id=fo.id AND v.missing=0) AS video_count, '
+            "(SELECT COUNT(*) FROM videos v WHERE v.folder_id=fo.id AND v.missing=0 AND v.media_kind='audio') AS audio_count "
             'FROM folders fo ORDER BY fo.name COLLATE NOCASE').fetchall()
         return [dict(r) for r in rows]
 

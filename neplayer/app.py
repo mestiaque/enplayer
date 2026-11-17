@@ -84,18 +84,30 @@ class NeplayerApp(Adw.Application):
         follow a dark system style) and reloads the stylesheet in place."""
         theme = self.settings['theme']
         sm = Adw.StyleManager.get_default()
-        sm.set_color_scheme(Adw.ColorScheme.FORCE_LIGHT if theme == 'light' else Adw.ColorScheme.FORCE_DARK)
+        light = theme in ('light', 'glass')  # Glass is light frosted glass, like the other EN* apps
+        sm.set_color_scheme(Adw.ColorScheme.FORCE_LIGHT if light else Adw.ColorScheme.FORCE_DARK)
         if getattr(self, '_css_provider', None) is not None:
             self._load_css()
 
     def _accent_css(self, theme):
         from neplayer.config import ACCENTS
         a = self.settings['accent'] if self.settings['accent'] in ACCENTS else ACCENTS[0]
-        text = f'shade({a}, 0.82)' if theme == 'light' else f'shade({a}, 1.3)'
+        text = f'shade({a}, 0.82)' if theme in ('light', 'glass') else f'shade({a}, 1.3)'
         dots = ''.join(f'.accent-dot-{i} {{ background-color: {c}; }}\n' for i, c in enumerate(ACCENTS))
         return (f'@define-color ff_accent {a};\n@define-color ff_accent_hot shade({a}, 1.3);\n'
                 f'@define-color accent_bg_color {a};\n@define-color accent_fg_color #ffffff;\n'
                 f'@define-color accent_color {text};\n{dots}')
+
+    def _glass_wallpaper(self):
+        """file:// URI of the Glass wallpaper for the current accent ('' if it cannot be drawn)."""
+        from neplayer.config import ACCENTS, DEFAULT_CACHE_DIR
+        accent = self.settings['accent'] if self.settings['accent'] in ACCENTS else ACCENTS[0]
+        try:
+            from neplayer.ui.glass_wallpaper import wallpaper
+            return wallpaper(accent, DEFAULT_CACHE_DIR).as_uri()
+        except Exception:
+            log.warning('could not draw the Glass wallpaper', exc_info=True)
+            return ''
 
     def _load_css(self):
         styles = RESOURCES_DIR / 'styles'
@@ -103,6 +115,9 @@ class NeplayerApp(Adw.Application):
         # Palette first (named colours), then base rules, then theme-specific rules.
         css = (styles / f'themes/{theme}.colors.css').read_text(encoding='utf-8') + self._accent_css(theme) + \
             ''.join((styles / f).read_text(encoding='utf-8') for f in ('style.css', f'themes/{theme}.css'))
+        if theme == 'glass':
+            uri = self._glass_wallpaper()
+            css = css.replace('url("@GLASS_WALLPAPER@")', f'url("{uri}")' if uri else 'none')
         display = Gdk.Display.get_default()
         if getattr(self, '_css_provider', None) is not None:
             Gtk.StyleContext.remove_provider_for_display(display, self._css_provider)
@@ -116,7 +131,7 @@ class NeplayerApp(Adw.Application):
             from neplayer.ui.main_window import MainWindow
             self.window = MainWindow(self, self.db, self.settings, self.library)
             self.window.connect('close-request', self._on_window_close)
-            GLib.idle_add(self._start_library)
+            GLib.idle_add(self._start_library, priority=GLib.PRIORITY_DEFAULT)
         return self.window
 
     def _start_library(self):
@@ -153,7 +168,7 @@ class NeplayerApp(Adw.Application):
                 win.library.add_folder(p)
         vids = [p for p in paths if os.path.isfile(p)]
         if vids:
-            GLib.idle_add(lambda: win.play_path(vids[0]) and False)
+            GLib.idle_add(lambda: win.play_path(vids[0]) and False, priority=GLib.PRIORITY_DEFAULT)
 
     def _on_window_close(self, *_):
         self.library.shutdown()

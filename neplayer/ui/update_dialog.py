@@ -133,6 +133,13 @@ class UpdateDialog(Adw.Window):
         if self.kind == 'windows':
             self.status.set_label('Installing… ENPlayer will restart by itself.')
             GLib.timeout_add(600, lambda: app.quit() or False)
+            # The installer waits for this process to end. A worker thread that is still busy must
+            # not keep it alive (the files would stay in use and the update would fail).
+            import os
+            import threading
+            t = threading.Timer(8, os._exit, args=(0,))
+            t.daemon = True
+            t.start()
             return False
         self.status.set_label(f'{APP_NAME} {self.update.version} is installed. Restart to use it.')
         self.later.set_label('Restart later')

@@ -12,6 +12,11 @@ from neplayer.core import scanner
 
 log = logging.getLogger(__name__)
 
+# Results go to the GTK thread at default priority, not idle priority: while the window redraws
+# continuously (a spinner, the Glass wallpaper on a slow GPU) idle sources may never run, and the
+# scan would look stuck forever.
+_PRIO = GLib.PRIORITY_DEFAULT
+
 
 class ScanWorker:
     def __init__(self, db, settings, on_progress, on_folder_done, on_idle):
@@ -54,15 +59,15 @@ class ScanWorker:
                 hidden = self._settings['ignore_hidden']
 
                 def progress(done, total, _path, name=name):
-                    GLib.idle_add(self._on_progress, name, done, total)
+                    GLib.idle_add(self._on_progress, name, done, total, priority=_PRIO)
 
-                GLib.idle_add(self._on_progress, name, 0, 0)
+                GLib.idle_add(self._on_progress, name, 0, 0, priority=_PRIO)
                 try:
                     res = scanner.scan_folder(self._db, folder, exts, hidden,
                                               self.cancel_event, progress)
-                    GLib.idle_add(self._on_folder_done, res)
+                    GLib.idle_add(self._on_folder_done, res, priority=_PRIO)
                 except Exception:
                     log.exception('Scan failed for %s', folder['path'])
             if self._q.empty():
                 self.busy = False
-                GLib.idle_add(self._on_idle)
+                GLib.idle_add(self._on_idle, priority=_PRIO)

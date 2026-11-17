@@ -21,7 +21,8 @@ DefaultGroupName={#AppName}
 DisableProgramGroupPage=yes
 ; Per-user install by default: no admin password needed. Users may choose "all users".
 PrivilegesRequired=lowest
-PrivilegesRequiredOverridesAllowed=dialog
+; commandline: the in-app updater passes /ALLUSERS (Program Files copy) or /CURRENTUSER
+PrivilegesRequiredOverridesAllowed=commandline dialog
 ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
 MinVersion=10.0

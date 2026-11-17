@@ -86,18 +86,11 @@ class LibraryHeader(Gtk.Box):
         more_btn.add_css_class('flat')
         more_btn.add_css_class('hb-btn')
 
-        theme = Gio.Menu()
-        theme.append('Dark', "win.theme('dark')")
-        theme.append('Light', "win.theme('light')")
-        theme.append('Glass', "win.theme('glass')")
         self.top_btn = Gtk.ToggleButton(icon_name='view-pin-symbolic', tooltip_text='Always on top')
         self.top_btn.add_css_class('flat')
         self.top_btn.add_css_class('hb-btn')
         self.top_btn.set_action_name('win.always-on-top')
 
-        self.theme_btn = Gtk.MenuButton(menu_model=theme, tooltip_text='Theme')
-        self.theme_btn.add_css_class('flat')
-        self.theme_btn.add_css_class('hb-btn')
         open_btn = icon_btn('document-open-symbolic', 'Open file (Ctrl+O)', 'win.open-file')
         add_btn = icon_btn('folder-open-symbolic', 'Add folder (Ctrl+N)', 'win.add-folder')
 
@@ -143,7 +136,6 @@ class LibraryHeader(Gtk.Box):
         right.add(sep, priority=4)
         right.add(add_btn, priority=4)
         right.add(open_btn, priority=4)
-        right.add(self.theme_btn, priority=3)
         right.add(self.top_btn, priority=3)
         right.add(more_btn)
         right.add(settings_btn)
@@ -155,10 +147,6 @@ class LibraryHeader(Gtk.Box):
             row.append(w)
         row.append(Gtk.WindowControls(side=Gtk.PackType.END))
         self.bar.set_title_widget(row)
-
-    def set_theme_icon(self, theme):
-        self.theme_btn.set_icon_name({'light': 'weather-clear-symbolic',
-                                      'glass': 'weather-few-clouds-symbolic'}.get(theme, 'weather-clear-night-symbolic'))
 
     def set_page(self, title, subtitle=''):
         self.page_title.set_label(title)

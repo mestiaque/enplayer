@@ -178,7 +178,7 @@ class MpvGLArea(Gtk.GLArea):
                              opengl_fbo={'w': w, 'h': h, 'fbo': _current_fbo()})
             if new_frame and self._want_first_frame and self.mpv.vo_configured:
                 self._want_first_frame = False
-                GLib.idle_add(self._emit_first_frame)
+                GLib.idle_add(self._emit_first_frame, priority=GLib.PRIORITY_DEFAULT)
         except Exception:
             log.exception('mpv render failed')
         return True

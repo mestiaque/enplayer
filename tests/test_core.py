@@ -490,6 +490,49 @@ class UpdaterTests(unittest.TestCase):
         self.assertIsNone(updater.update_from_release(self._release('v0.1.0'), 'deb'))
         self.assertIsNone(updater.update_from_release(dict(self._release('v9.0.0'), prerelease=True), 'deb'))
 
+    def test_release_notes_without_github_links(self):
+        from neplayer.core import updater
+        self.assertEqual(updater.clean_notes(
+            '**Full Changelog**: https://github.com/mestiaque/enplayer/compare/v1.4.9...v1.4.10'), '')
+        notes = updater.clean_notes("## What's Changed\r\n* Faster scans by @me in https://github.com/a/b/pull/3\r\n"
+                                    "* **Bold** fix, see [docs](https://x)\r\n\r\n## New Contributors\r\n"
+                                    "* @x made their first contribution in https://github.com/a/b/pull/1\r\n\r\n"
+                                    "**Full Changelog**: https://github.com/a/b/compare/v1...v2")
+        self.assertEqual(notes, "What's Changed\n\u2022 Faster scans\n\u2022 Bold fix, see docs")
+        up = updater.update_from_release(dict(self._release('v9.0.0'), body='**Full Changelog**: '
+                                              'https://github.com/a/b/compare/v1...v9'), 'deb')
+        self.assertEqual(up.notes, '')
+
+    def test_windows_update_script(self):
+        import base64
+        from pathlib import PureWindowsPath as W
+        from neplayer.core import updater
+        script = updater.windows_update_script(W(r"C:\Users\O'Neil\Cache\ENPlayer-Setup-9.0.0.exe"),
+                                               W(r'C:\Program Files\ENPlayer'),
+                                               W(r'C:\Program Files\ENPlayer\bin\ENPlayer.exe'), 4242,
+                                               W(r'C:\Temp\ENPlayer-update.log'))
+        self.assertIn('Wait-Process -Id 4242', script)                  # waits for this process to quit
+        self.assertIn(r"-FilePath 'C:\Users\O''Neil\Cache\ENPlayer-Setup-9.0.0.exe'", script)
+        self.assertIn('\'/DIR="C:\\Program Files\\ENPlayer"\'', script)  # same folder
+        self.assertIn(r"Start-Process -FilePath 'C:\Program Files\ENPlayer\bin\ENPlayer.exe'", script)
+        args = updater.powershell_command(script)
+        self.assertEqual(args[-2], '-EncodedCommand')
+        self.assertEqual(base64.b64decode(args[-1]).decode('utf-16-le'), script)
+        self.assertFalse(any('"' in a for a in args))                   # nothing for Windows to escape
+        self.assertIn("'/CURRENTUSER'", script)                         # a folder the user can write
+        admin = updater.windows_update_script(W(r'C:\Temp\s.exe'), W(r'C:\Program Files\ENPlayer'),
+                                              W(r'C:\Program Files\ENPlayer\bin\ENPlayer.exe'), 1,
+                                              W(r'C:\Temp\u.log'), all_users=True)
+        self.assertIn("'/ALLUSERS'", admin)                             # Program Files: admin mode
+
+    def test_folder_writable(self):
+        from neplayer.core import updater
+        tmp = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, tmp, True)
+        self.assertTrue(updater.folder_writable(tmp))
+        self.assertEqual(list(tmp.iterdir()), [])                       # the probe file is removed
+        self.assertFalse(updater.folder_writable(tmp / 'missing'))
+
     def test_download_verifies_checksum(self):
         import hashlib
         from neplayer.core import updater

@@ -5,11 +5,14 @@ check()    -> asks the GitHub API for the latest release (the only network reque
 download() -> fetches the installer for this platform and verifies its SHA-256 when GitHub
               publishes one.
 install()  -> Ubuntu: `pkexec apt-get install <deb>` (system password prompt, upgrades in place);
-              Windows: runs the Inno Setup installer silently, which upgrades the same install.
+              Windows: a hidden PowerShell script waits for ENPlayer to quit, runs the Inno Setup
+              installer silently over the same folder and starts the new version (log in
+              %TEMP%\\ENPlayer-update.log).
 restart()  -> starts the new version after this process has quit.
 
 Nothing here touches GTK, so it can run on worker threads and be unit-tested.
 """
+import base64
 import hashlib
 import json
 import os
@@ -17,6 +20,7 @@ import re
 import shutil
 import subprocess
 import sys
+import tempfile
 import urllib.request
 from dataclasses import dataclass
 from pathlib import Path
@@ -99,11 +103,32 @@ def check(timeout=10, kind=None):
     return update_from_release(data, kind)
 
 
+# Lines GitHub adds to generated release notes: a link to the code changes, pull-request credits.
+_NOTES_NOISE = re.compile(r'full changelog|made their first contribution|github\.com/\S+/(compare|commits)/'
+                          r'|^\s*#*\s*new contributors\s*$', re.I)
+
+
+def clean_notes(text):
+    """Release notes as plain text for the update dialog: GitHub's generated links ("Full Changelog:
+    https://github.com/.../compare/...") and Markdown marks are left out."""
+    lines = []
+    for line in str(text).replace('\r', '').split('\n'):
+        if _NOTES_NOISE.search(line):
+            continue
+        line = re.sub(r'\s+by @\S+ in https://github\.com/\S+', '', line)   # "* Fix by @x in https://.../pull/3"
+        line = re.sub(r'\[([^\]]+)\]\([^)]*\)', r'\1', line)                 # [text](link) -> text
+        line = re.sub(r'\*\*|__|`', '', line)
+        line = re.sub(r'^\s*#{1,6}\s*', '', line)
+        line = re.sub(r'^(\s*)[*-]\s+', '\\1\u2022 ', line)
+        lines.append(line.rstrip())
+    return re.sub(r'\n{3,}', '\n\n', '\n'.join(lines)).strip()
+
+
 def update_from_release(data, kind):
     tag = data.get('tag_name') or ''
     if not tag or data.get('draft') or data.get('prerelease') or not is_newer(tag):
         return None
-    up = Update(version='.'.join(map(str, parse_version(tag))), notes=(data.get('body') or '').strip(),
+    up = Update(version='.'.join(map(str, parse_version(tag))), notes=clean_notes(data.get('body') or ''),
                 page=data.get('html_url') or RELEASES_PAGE)
     asset = pick_asset(data.get('assets') or [], kind) if kind else None
     if asset:
@@ -151,6 +176,57 @@ def download(update, dest_dir, progress=None, cancelled=lambda: False):
     return out
 
 
+def _ps(text):
+    """A PowerShell single-quoted string literal."""
+    return "'" + str(text).replace("'", "''") + "'"
+
+
+def windows_update_script(installer, app_dir, exe, pid, log, all_users=False):
+    """PowerShell that finishes a Windows update once ENPlayer (process `pid`) has quit: runs the
+    Inno Setup installer silently over `app_dir`, then starts `exe`. Every step goes to `log`.
+    `all_users`: the copy lives in a folder this user cannot write (Program Files), so the installer
+    runs in administrative mode (/ALLUSERS, Windows asks for permission); otherwise /CURRENTUSER.
+
+    It runs through -EncodedCommand: a `cmd /c "..."` line breaks here, because Windows programs
+    escape the quotes around paths as \\" , which cmd.exe does not understand, and because the
+    `timeout` command fails without a console."""
+    dir_arg = _ps('/DIR="%s"' % app_dir)   # Inno Setup reads the quoted folder itself
+    return '\n'.join([
+        "$ErrorActionPreference = 'Continue'",
+        f"$log = {_ps(log)}",
+        "function Log($m) { Add-Content -LiteralPath $log -Value ((Get-Date -Format s) + '  ' + $m) -Encoding UTF8 }",
+        f"Log 'Update: waiting for ENPlayer (process {int(pid)}) to quit'",
+        f"Wait-Process -Id {int(pid)} -Timeout 60 -ErrorAction SilentlyContinue",
+        "try {",
+        f"  $p = Start-Process -FilePath {_ps(installer)} -Wait -PassThru -ArgumentList "
+        f"'/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART', '/CLOSEAPPLICATIONS', "
+        f"'{'/ALLUSERS' if all_users else '/CURRENTUSER'}', {dir_arg}",
+        "  Log ('Installer finished with exit code ' + $p.ExitCode)",
+        "} catch { Log ('The installer did not run: ' + $_) }",
+        f"try {{ Start-Process -FilePath {_ps(exe)} }} catch {{ Log ('Could not start ENPlayer: ' + $_) }}",
+    ])
+
+
+def folder_writable(path):
+    """True if this user can create files in `path`. os.access() cannot tell on Windows (it ignores
+    the folder's permissions), so try it."""
+    probe = Path(path) / f'.enplayer-write-test-{os.getpid()}'
+    try:
+        probe.write_bytes(b'')
+        probe.unlink()
+        return True
+    except OSError:
+        return False
+
+
+def powershell_command(script):
+    """Arguments that run `script` in a hidden Windows PowerShell (no quoting involved)."""
+    ps = Path(os.environ.get('SystemRoot', r'C:\Windows')) / 'System32' / 'WindowsPowerShell' / 'v1.0' / 'powershell.exe'
+    encoded = base64.b64encode(script.encode('utf-16-le')).decode('ascii')
+    return [str(ps), '-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-WindowStyle', 'Hidden',
+            '-EncodedCommand', encoded]
+
+
 def install(path, kind=None):
     """Install the downloaded package. Ubuntu: blocks until apt finishes. Windows: the installer
     runs after this process quits (call restart/quit right after). Raises UpdateError."""
@@ -168,12 +244,17 @@ def install(path, kind=None):
             raise UpdateError('Installing the update failed:\n' + '\n'.join(tail))
         return
     if kind == 'windows':
-        exe = Path(sys.executable).parent / 'ENPlayer.exe'  # every installer since 1.4.10 ships it
-        # wait for ENPlayer to exit, install silently over the same folder, start the new version
-        cmd = (f'timeout /t 2 /nobreak >nul & "{path}" /VERYSILENT /SUPPRESSMSGBOXES /NORESTART '
-               f'/CLOSEAPPLICATIONS & start "" "{exe}"')
-        flags = getattr(subprocess, 'DETACHED_PROCESS', 0) | getattr(subprocess, 'CREATE_NEW_PROCESS_GROUP', 0)
-        subprocess.Popen(['cmd', '/c', cmd], creationflags=flags, close_fds=True)
+        bin_dir = Path(sys.executable).parent           # <app>\bin (ENPlayer.exe since 1.4.10)
+        app_dir = bin_dir.parent
+        script = windows_update_script(path, app_dir, bin_dir / 'ENPlayer.exe', os.getpid(),
+                                       Path(tempfile.gettempdir()) / 'ENPlayer-update.log',
+                                       all_users=not folder_writable(app_dir))
+        try:
+            subprocess.Popen(powershell_command(script), close_fds=True,
+                             creationflags=getattr(subprocess, 'CREATE_NO_WINDOW', 0)
+                             | getattr(subprocess, 'CREATE_NEW_PROCESS_GROUP', 0))
+        except OSError as e:
+            raise UpdateError(f'Could not start the installer: {e}') from e
         return
     raise UpdateError('This copy of ENPlayer runs from the source code and cannot update itself')
 

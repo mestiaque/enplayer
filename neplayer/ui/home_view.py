@@ -116,11 +116,13 @@ class HomeView(Gtk.ScrolledWindow):
         greet = ('Good morning' if 5 <= hour < 12 else 'Good afternoon' if 12 <= hour < 18
                  else 'Good evening')
         self.greeting.set_label(greet)
-        hours = stats['dur'] / 3600
+        mins = stats['dur'] / 60
+        length = (f'{mins / 60:.1f} hours' if mins >= 60 else f'{round(mins)} min' if mins >= 1
+                  else 'under a minute')
         songs = db.count_kind('audio')
         vids = stats['n'] - songs
         what = '  ·  '.join(p for p in (f'{vids} videos' if vids else '', f'{songs} songs' if songs else '') if p)
-        self.stats.set_label(f'{what}  ·  {hours:.1f} hours  ·  {format_size(stats["size"])}'
+        self.stats.set_label(f'{what}  ·  {length}  ·  {format_size(stats["size"])}'
                              if stats['n'] else 'Your library is empty')
         empty = stats['n'] == 0
         self.empty.set_visible(empty)

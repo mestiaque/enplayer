@@ -26,6 +26,7 @@ class Sidebar(Gtk.Box):
     def __init__(self):
         super().__init__(orientation=Gtk.Orientation.VERTICAL)
         self.add_css_class('ff-sidebar')
+        self.set_overflow(Gtk.Overflow.HIDDEN)  # rounded corners in the Glass theme
         self.set_size_request(232, -1)
 
         header = Adw.HeaderBar(show_end_title_buttons=False)
