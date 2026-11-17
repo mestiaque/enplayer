@@ -22,6 +22,7 @@ import glob
 import os
 import re
 import shutil
+import stat
 import subprocess
 import sys
 
@@ -47,11 +48,23 @@ def size(path):
     return total
 
 
+def _writable_retry(func, path, _exc):
+    # Windows refuses to delete read-only files (several MSYS2 packages install some).
+    os.chmod(path, stat.S_IWRITE)
+    func(path)
+
+
 def rm(path):
     if os.path.isdir(path) and not os.path.islink(path):
-        shutil.rmtree(path)
+        if sys.version_info >= (3, 12):
+            shutil.rmtree(path, onexc=_writable_retry)
+        else:
+            shutil.rmtree(path, onerror=_writable_retry)
     elif os.path.lexists(path):
-        os.remove(path)
+        try:
+            os.remove(path)
+        except PermissionError:
+            _writable_retry(os.remove, path, None)
 
 
 def imports(objdump, path):
