@@ -29,7 +29,10 @@ from neplayer.config import APP_NAME, VERSION
 
 REPO = 'mestiaque/enplayer'
 API_LATEST = f'https://api.github.com/repos/{REPO}/releases/latest'
-RELEASES_PAGE = f'https://github.com/{REPO}/releases/latest'
+# The latest release, as published to the public mestiaque/en-releases repository: a plain file (no
+# API rate limit), readable although this repository is private. The release API is the fallback.
+MANIFEST = 'https://raw.githubusercontent.com/mestiaque/en-releases/main/enplayer.json'
+RELEASES_PAGE = 'https://github.com/mestiaque/en-releases/releases'
 DEB_INSTALL_DIR = Path('/usr/lib/enplayer')
 
 
@@ -95,11 +98,16 @@ def check(timeout=10, kind=None):
     if os.environ.get('SNAP'):
         return None  # the Snap Store updates this copy
     kind = install_kind() if kind is None else kind
-    try:
-        with urllib.request.urlopen(_request(API_LATEST), timeout=timeout) as r:
-            data = json.loads(r.read().decode('utf-8'))
-    except Exception as e:
-        raise UpdateError(f'Could not reach GitHub: {e}') from e
+    data, error = None, None
+    for url in (MANIFEST, API_LATEST):
+        try:
+            with urllib.request.urlopen(_request(url), timeout=timeout) as r:
+                data = json.loads(r.read().decode('utf-8'))
+            break
+        except Exception as e:
+            error = e
+    if data is None:
+        raise UpdateError(f'Could not reach GitHub: {error}') from error
     return update_from_release(data, kind)
 
 
