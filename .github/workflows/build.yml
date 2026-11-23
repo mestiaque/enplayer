@@ -70,8 +70,10 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          cd "$GITHUB_WORKSPACE"  # paths are from the repository root, whatever the job's working directory
           shopt -s nullglob
-          files=(dist/*.deb)
+          all=(dist/*.deb)
+          files=(); for f in "${all[@]}"; do [ -e "$f" ] && files+=("$f"); done  # a file of the other system is not there
           [ ${#files[@]} -gt 0 ] || { echo "nothing to attach"; exit 1; }
           gh release view "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" >/dev/null 2>&1 \
             || gh release create "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" --draft --title "$RELEASE_TAG" --notes "" || true
@@ -116,8 +118,10 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          cd "$GITHUB_WORKSPACE"  # paths are from the repository root, whatever the job's working directory
           shopt -s nullglob
-          files=(dist/ENPlayer-Setup-*.exe)
+          all=(dist/ENPlayer-Setup-*.exe)
+          files=(); for f in "${all[@]}"; do [ -e "$f" ] && files+=("$f"); done  # a file of the other system is not there
           [ ${#files[@]} -gt 0 ] || { echo "nothing to attach"; exit 1; }
           gh release view "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" >/dev/null 2>&1 \
             || gh release create "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" --draft --title "$RELEASE_TAG" --notes "" || true
@@ -142,8 +146,10 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          cd "$GITHUB_WORKSPACE"  # paths are from the repository root, whatever the job's working directory
           shopt -s nullglob
-          files=("${{ steps.snap.outputs.snap }}")
+          all=("${{ steps.snap.outputs.snap }}")
+          files=(); for f in "${all[@]}"; do [ -e "$f" ] && files+=("$f"); done  # a file of the other system is not there
           [ ${#files[@]} -gt 0 ] || { echo "nothing to attach"; exit 1; }
           gh release view "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" >/dev/null 2>&1 \
             || gh release create "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" --draft --title "$RELEASE_TAG" --notes "" || true
