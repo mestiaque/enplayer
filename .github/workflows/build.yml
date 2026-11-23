@@ -13,14 +13,23 @@ on:
       - 'docs/**'
       - '**.md'
   workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag to build and attach the installers to (e.g. v1.2.3); empty: build only"
+        required: false
+        default: ""
 
 # A newer run for the same tag/branch cancels the older one.
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ inputs.tag || github.ref }}
   cancel-in-progress: true
 
 permissions:
   contents: write
+
+env:
+  # The release the installers are attached to: a pushed tag, or the tag given to a manual run.
+  RELEASE_TAG: ${{ inputs.tag || (startsWith(github.ref, 'refs/tags/v') && github.ref_name) || '' }}
 
 jobs:
   linux:
@@ -31,6 +40,8 @@ jobs:
       DEBIAN_FRONTEND: noninteractive
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag || github.ref }}
       - name: Install dependencies
         # apt on the hosted runner occasionally hangs on a mirror: bound each try and retry.
         run: |
@@ -53,10 +64,19 @@ jobs:
           sudo apt-get install -y ./dist/enplayer_*_all.deb
           test -x /usr/bin/enplayer
           python3 -s -c "import sys; sys.path.insert(0, '/usr/lib/enplayer'); import mpv, neplayer.ui.main_window; print('ok', mpv.__file__)"
-      - uses: actions/upload-artifact@v4
-        with:
-          name: enplayer-ubuntu-deb
-          path: dist/*.deb
+      - name: Attach to the release (a draft until it is published)
+        if: env.RELEASE_TAG != ''
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          shopt -s nullglob
+          files=(dist/*.deb)
+          [ ${#files[@]} -gt 0 ] || { echo "nothing to attach"; exit 1; }
+          gh release view "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" >/dev/null 2>&1 \
+            || gh release create "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" --draft --title "$RELEASE_TAG" --notes "" || true
+          for i in 1 2 3; do gh release upload "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" --clobber "${files[@]}" && exit 0; sleep 15; done
+          exit 1
 
   windows:
     name: Windows installer
@@ -67,6 +87,8 @@ jobs:
         shell: msys2 {0}
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag || github.ref }}
       - uses: msys2/setup-msys2@v2
         with:
           msystem: UCRT64
@@ -88,57 +110,42 @@ jobs:
           if (-not $iscc) { $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" }
           $ver = (Select-String -Path neplayer\config.py -Pattern "^VERSION = '(.+)'").Matches[0].Groups[1].Value
           & $iscc "/DAppVersion=$ver" packaging\windows\enplayer.iss
-      - uses: actions/upload-artifact@v4
-        with:
-          name: enplayer-windows-installer
-          path: dist/ENPlayer-Setup-*.exe
+      - name: Attach to the release (a draft until it is published)
+        if: env.RELEASE_TAG != ''
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          shopt -s nullglob
+          files=(dist/ENPlayer-Setup-*.exe)
+          [ ${#files[@]} -gt 0 ] || { echo "nothing to attach"; exit 1; }
+          gh release view "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" >/dev/null 2>&1 \
+            || gh release create "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" --draft --title "$RELEASE_TAG" --notes "" || true
+          for i in 1 2 3; do gh release upload "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" --clobber "${files[@]}" && exit 0; sleep 15; done
+          exit 1
 
   snap:
     name: Ubuntu snap
+    if: inputs.tag != '' || startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-22.04
     timeout-minutes: 45
     continue-on-error: true   # the snap must not block the .deb and Windows releases
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag || github.ref }}
       - uses: snapcore/action-build@v1
         id: snap
-      - uses: actions/upload-artifact@v4
-        with:
-          name: enplayer-snap
-          path: ${{ steps.snap.outputs.snap }}
-
-  release:
-    name: Publish release
-    # Publish as soon as the Ubuntu package built; a failing Windows build must not block updates.
-    if: ${{ !cancelled() && startsWith(github.ref, 'refs/tags/v') && needs.linux.result == 'success' }}
-    needs: [linux, windows, snap]
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/download-artifact@v4
-        with:
-          path: out
-          merge-multiple: true
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          path: src
-      - name: Release notes
-        # What the in-app update dialog shows: the changes since the previous version (commit
-        # titles, without CI/docs housekeeping), not GitHub's generated "Full Changelog" link.
+      - name: Attach to the release (a draft until it is published)
+        if: env.RELEASE_TAG != ''
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
-          prev=$(git -C src describe --tags --abbrev=0 "${GITHUB_REF_NAME}^" 2>/dev/null || true)
-          {
-            echo "What's new in ${GITHUB_REF_NAME#v}:"
-            echo
-            git -C src log --no-merges --format='- %s' ${prev:+$prev..}"$GITHUB_REF_NAME" \
-              | grep -viE '^- (CI|README|Docs?|Status report)\b' || true
-          } > release-notes.md
-          cat release-notes.md
-      - uses: softprops/action-gh-release@v2
-        with:
-          files: |
-            out/*.deb
-            out/*.exe
-            out/*.snap
-          fail_on_unmatched_files: false
-          body_path: release-notes.md
+          shopt -s nullglob
+          files=("${{ steps.snap.outputs.snap }}")
+          [ ${#files[@]} -gt 0 ] || { echo "nothing to attach"; exit 1; }
+          gh release view "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" >/dev/null 2>&1 \
+            || gh release create "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" --draft --title "$RELEASE_TAG" --notes "" || true
+          for i in 1 2 3; do gh release upload "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" --clobber "${files[@]}" && exit 0; sleep 15; done
+          exit 1
