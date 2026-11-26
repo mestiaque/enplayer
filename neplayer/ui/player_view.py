@@ -172,6 +172,8 @@ class PlayerView(Gtk.Overlay):
         bar.append(self.viz_menu)
         bar.append(_icon_button('dialog-information-symbolic', 'Statistics (I)',
                                 lambda: self._do('stats', None)))
+        bar.append(_icon_button('window-minimize-symbolic', 'Minimize',
+                                lambda: self.get_root().minimize()))
         close = _icon_button('window-close-symbolic', 'Close player (Esc)', self.close)
         close.add_css_class('player-close')
         bar.append(close)
@@ -627,8 +629,10 @@ class PlayerView(Gtk.Overlay):
         self._loaded_path = v['file_path']
         self.spinner.set_visible(True)
         self.spinner.start()
-        load = lambda: self.mpv.command('loadfile', v['file_path'], 'replace',  # noqa: E731
-                                        ','.join(f'{k}={x}' for k, x in opts.items()))
+        # Use python-mpv's version-aware wrapper. mpv 0.38 added an insertion-index
+        # argument to loadfile; passing the old options argument position directly
+        # is treated as that index (and rejected by current Windows libmpv builds).
+        load = lambda: self.mpv.loadfile(v['file_path'], 'replace', **opts)  # noqa: E731
         if self.area.is_ready:
             load()
         else:

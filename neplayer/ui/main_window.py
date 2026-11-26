@@ -1,6 +1,7 @@
 """Main application window. Also acts as the 'context' passed to child views."""
 import logging
 import os
+import sys
 import threading
 import time
 from pathlib import Path
@@ -65,8 +66,21 @@ class MainWindow(Adw.ApplicationWindow):
         self._return_view = 'home'
         self._search_src = None
         self.add_css_class('neplayer')
-        self.set_default_size(1360, 860)
+        # Start at half the monitor width and height (one quarter of its area).
+        # GTK sizes are logical pixels, as returned by Gdk.Monitor.get_geometry().
+        try:
+            monitors = Gdk.Display.get_default().get_monitors()
+            monitor = monitors.get_item(0) if monitors.get_n_items() else None
+            geometry = monitor.get_geometry() if monitor else None
+            if geometry and geometry.width > 0 and geometry.height > 0:
+                self.set_default_size(geometry.width // 2, geometry.height // 2)
+            else:
+                self.set_default_size(960, 600)
+        except Exception:
+            self.set_default_size(960, 600)
         self.set_size_request(560, 420)
+        self._centered_on_start = False
+        self.connect('map', self._center_on_start)
 
         # ---------- library page
         self.sidebar = Sidebar()
@@ -151,6 +165,57 @@ class MainWindow(Adw.ApplicationWindow):
             t.set_button_label(button)
             t.set_action_name(action)
         self.toasts.add_toast(t)
+
+    def _center_on_start(self, *_):
+        """Center the first Windows presentation in the monitor work area."""
+        if self._centered_on_start or sys.platform != 'win32':
+            return
+        self._centered_on_start = True
+        GLib.timeout_add(120, self._center_windows_native)
+
+    def _center_windows_native(self):
+        # GTK4 intentionally leaves toplevel placement to the compositor. On
+        # Windows use the documented Win32 window APIs after the initial map.
+        try:
+            import ctypes
+            from ctypes import wintypes
+
+            user32 = ctypes.WinDLL('user32', use_last_error=True)
+            user32.FindWindowW.argtypes = [wintypes.LPCWSTR, wintypes.LPCWSTR]
+            user32.FindWindowW.restype = wintypes.HWND
+            hwnd = user32.FindWindowW(None, APP_NAME)
+            if not hwnd:
+                return GLib.SOURCE_REMOVE
+
+            class RECT(ctypes.Structure):
+                _fields_ = [('left', wintypes.LONG), ('top', wintypes.LONG),
+                            ('right', wintypes.LONG), ('bottom', wintypes.LONG)]
+
+            class MONITORINFO(ctypes.Structure):
+                _fields_ = [('cbSize', wintypes.DWORD), ('rcMonitor', RECT),
+                            ('rcWork', RECT), ('dwFlags', wintypes.DWORD)]
+
+            user32.GetWindowRect.argtypes = [wintypes.HWND, ctypes.POINTER(RECT)]
+            user32.MonitorFromWindow.argtypes = [wintypes.HWND, wintypes.DWORD]
+            user32.MonitorFromWindow.restype = wintypes.HANDLE
+            user32.GetMonitorInfoW.argtypes = [wintypes.HANDLE, ctypes.POINTER(MONITORINFO)]
+            user32.SetWindowPos.argtypes = [wintypes.HWND, wintypes.HWND, ctypes.c_int, ctypes.c_int,
+                                             ctypes.c_int, ctypes.c_int, wintypes.UINT]
+            rect = RECT()
+            monitor = user32.MonitorFromWindow(hwnd, 2)  # MONITOR_DEFAULTTONEAREST
+            info = MONITORINFO()
+            info.cbSize = ctypes.sizeof(info)
+            if not user32.GetWindowRect(hwnd, ctypes.byref(rect)) or not user32.GetMonitorInfoW(
+                    monitor, ctypes.byref(info)):
+                return GLib.SOURCE_REMOVE
+            width, height = rect.right - rect.left, rect.bottom - rect.top
+            work = info.rcWork
+            x = work.left + max(0, work.right - work.left - width) // 2
+            y = work.top + max(0, work.bottom - work.top - height) // 2
+            user32.SetWindowPos(hwnd, None, x, y, 0, 0, 0x0001 | 0x0004)  # NOSIZE | NOZORDER
+        except Exception:
+            log.debug('Could not center the Windows window', exc_info=True)
+        return GLib.SOURCE_REMOVE
 
     # ================================================================ updates
     def schedule_update_check(self):

@@ -174,8 +174,9 @@ class PreviewManager:
             opts['vf'] = f'scale=-2:{max_h}'
         self._area.expect_first_frame()
         try:
-            self._area.mpv.command('loadfile', video['file_path'], 'replace',
-                                   ','.join(f'{k}={v}' for k, v in opts.items()))
+            # python-mpv adjusts the loadfile arguments for mpv versions before
+            # and after 0.38, when an insertion-index argument was introduced.
+            self._area.mpv.loadfile(video['file_path'], 'replace', **opts)
             self.starts += 1
         except Exception:
             log.exception('Preview failed to load %s', video['file_path'])
