@@ -66,6 +66,10 @@ class PlayerView(Gtk.Overlay):
         self._click_src = None
         self._next_src = None
         self._next_countdown = 0
+        self._handling_keyboard = False
+        self._keyboard_pause_target = None
+        self._keyboard_pause_timeout = None
+        self._keyboard_paused = False
         self._tracks = []
         self._active = False
         self._loaded_path = None
@@ -645,7 +649,8 @@ class PlayerView(Gtk.Overlay):
             hid.append(self.area.connect('ready', on_ready))
         if start:
             self.show_osd(f'Resumed at {format_duration(start)}  ·  Home to start over', 3500)
-        self.show_controls()
+        if not self._handling_keyboard:
+            self.show_controls()
         self.grab_focus()
 
     def _update_subtitle_line(self, v):
@@ -757,10 +762,35 @@ class PlayerView(Gtk.Overlay):
             self.mpv['pause'] = False
             self._cancel_next()
             return
-        self.mpv['pause'] = not self._paused
+        target = not self._paused
+        if self._handling_keyboard:
+            self._expect_keyboard_pause_state(target)
+        self.mpv['pause'] = target
         self._flash('media-playback-start-symbolic' if self._paused
                     else 'media-playback-pause-symbolic')
-        self.show_controls()
+        if not self._handling_keyboard:
+            self.show_controls()
+
+    def _expect_keyboard_pause_state(self, paused):
+        if self._keyboard_pause_timeout is not None:
+            GLib.source_remove(self._keyboard_pause_timeout)
+        self._keyboard_pause_target = paused
+        self._keyboard_pause_timeout = GLib.timeout_add(1500, self._clear_keyboard_pause_target)
+
+    def _clear_keyboard_pause_target(self):
+        self._keyboard_pause_target = None
+        self._keyboard_pause_timeout = None
+        return False
+
+    def _consume_keyboard_pause_state(self, paused):
+        if self._keyboard_pause_target is None:
+            return False
+        matched = self._keyboard_pause_target == paused
+        if self._keyboard_pause_timeout is not None:
+            GLib.source_remove(self._keyboard_pause_timeout)
+        self._keyboard_pause_timeout = None
+        self._keyboard_pause_target = None
+        return matched
 
     def seek_relative(self, secs):
         try:
@@ -770,7 +800,8 @@ class PlayerView(Gtk.Overlay):
         self._flash('media-seek-forward-symbolic' if secs > 0 else 'media-seek-backward-symbolic')
         target = max(0, min(self._duration or 1e9, self._position + secs))
         self.show_osd(f'{"+" if secs > 0 else "−"}{abs(secs)} s   {format_duration(target)}')
-        self.show_controls()
+        if not self._handling_keyboard:
+            self.show_controls()
 
     def next(self):
         self._cancel_next()
@@ -803,7 +834,8 @@ class PlayerView(Gtk.Overlay):
     def change_volume(self, delta):
         self._set_volume((self.mpv.volume or 0) + delta)
         self.show_osd(f'Volume {int(self.mpv.volume)}%')
-        self.show_controls()
+        if not self._handling_keyboard:
+            self.show_controls()
 
     def _set_speed(self, s):
         s = max(0.25, min(4.0, round(s, 2)))
@@ -942,12 +974,14 @@ class PlayerView(Gtk.Overlay):
                 self.dur_lbl.set_label(format_duration(self._duration))
         elif name == 'pause':
             self._paused = bool(value)
+            keyboard_pause = self._consume_keyboard_pause_state(self._paused)
+            self._keyboard_paused = self._paused if keyboard_pause else False
             self.play_btn.set_icon_name('media-playback-start-symbolic' if self._paused
                                         else 'media-playback-pause-symbolic')
-            if self._paused:
+            if self._paused and self._active:
+                self._save_position()
+            if self._paused and not keyboard_pause:
                 self.show_controls(force=True)
-                if self._active:
-                    self._save_position()
             else:
                 self._schedule_hide()
         elif name in ('volume', 'mute'):
@@ -1166,7 +1200,11 @@ class PlayerView(Gtk.Overlay):
         hit = shortcuts.lookup(keyval, state)
         if hit is None:
             return False
-        self._do(*hit)
+        self._handling_keyboard = True
+        try:
+            self._do(*hit)
+        finally:
+            self._handling_keyboard = False
         return True
 
     def _do(self, action, arg):
@@ -1275,7 +1313,8 @@ class PlayerView(Gtk.Overlay):
         self._hide_src = None
         popover_open = any(b.get_popover() is not None and b.get_popover().get_visible()
                            for b in (self.speed_btn, self.sub_btn, self.audio_btn, self.viz_menu))
-        if ((self._is_audio and not self.settings['viz_enabled']) or self._paused or self._over_controls or popover_open or self.error_box.get_visible()
+        if ((self._is_audio and not self.settings['viz_enabled']) or
+                (self._paused and not self._keyboard_paused) or self._over_controls or popover_open or self.error_box.get_visible()
                 or self._seeking_drag or not self._active):
             self._schedule_hide()
             return False

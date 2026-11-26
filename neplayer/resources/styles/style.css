@@ -150,15 +150,15 @@ gridview.video-grid > child:hover, gridview.video-grid > child:focus { backgroun
 
 /* ---------------------------------------------------------------- player */
 .player { background-color: @ff_player_bg; }
-.player-top { padding: 10px 14px 34px; }
+.player-top { padding: 6px 12px 16px; }
 .player-title { font-size: 15px; font-weight: 700; color: @ff_player_fg; }
 .player-subtitle { font-size: 11px; color: @ff_player_dim; font-feature-settings: "tnum"; }
-.player-controls { padding: 34px 16px 8px; }
-.player-btn { color: @ff_player_fg; min-width: 32px; min-height: 32px; border-radius: 9px; }
+.player-controls { padding: 16px 12px 6px; }
+.player-btn { color: @ff_player_fg; min-width: 28px; min-height: 28px; border-radius: 8px; }
 .player-btn:hover { background-color: alpha(@ff_player_fg, 0.12); }
 .player-btn.has-tracks { color: @accent_color; }
 .play-btn {
-  min-width: 40px; min-height: 40px; margin: 0 4px;
+  min-width: 36px; min-height: 36px; margin: 0 3px;
   background-color: @ff_play_bg; color: @ff_play_fg; border-radius: 99px;
 }
 .play-btn:hover { background-color: alpha(@ff_play_bg, 0.85); }

@@ -53,13 +53,13 @@ switch > slider { background-image: radial-gradient(circle at 35% 30%, #ffffff, 
 /* Player: frosted white pills over the video, the ribbons around it. */
 .player { background-color: rgba(238, 242, 250, 0.35); }
 .player-top {
-  margin: 10px 12px 0; padding: 4px 8px; border-radius: 14px;
+  margin: 6px 10px 0; padding: 2px 6px; border-radius: 12px;
   background-color: rgba(255, 255, 255, 0.78);
   border: 1px solid rgba(255, 255, 255, 0.85);
   box-shadow: 0 14px 36px -12px rgba(17, 34, 80, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.95);
 }
 .player-controls {
-  margin: 0 12px 10px; padding: 6px 12px 6px; border-radius: 16px;
+  margin: 0 10px 6px; padding: 4px 10px; border-radius: 14px;
   background-color: rgba(255, 255, 255, 0.8);
   border: 1px solid rgba(255, 255, 255, 0.85);
   box-shadow: 0 16px 44px -14px rgba(17, 34, 80, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.95);
